@@ -11,7 +11,7 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 main: resolve(__dirname, 'index.html'),
-                mikurig: resolve(__dirname, 'mikurig/mikurig.html'),
+                mikurig: resolve(__dirname, 'mikurig/index.html'),
             }
         }
     }
