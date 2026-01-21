@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+    <head>  
+        <meta charset="utf-8" />
+
+        <link rel="stylesheet" type="text/css" href="lib/bootstrap/Icons/1.11.3/font/bootstrap-icons.css">
+        <link rel="stylesheet" type="text/css" href="lib/bootstrap/CSS/bootstrap.min.css">
+        <link rel="stylesheet" type="text/css" href="styles/menus.css">
+        
+        
+        <script type="text/javascript" src="lib/jquery/jquery.min.js"></script>
+        <script type="text/javascript" src="lib/bootstrap/JS/bootstrap.bundle.min.js"></script>
+
+        <script type="module" src="./src/menu.js"></script>
+        <script type="module" src="./src/menus/characterSelection.js"></script>
+        <script type="module" src="./src/startGame.js"></script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>        
+        <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>        
+        <link href="https://fonts.googleapis.com/css2?family=Concert+One&display=swap" rel="stylesheet">
+    </head>
+
+    <style>
+        :root{
+            --infoColor: #67007e;
+        }
+    </style>
+
+    <body>
+        <div style="height: 100vh; width: 100vh;">
+            <img id="GameCharacter" src="resources/characters/biboo.png" style="position: fixed; top: 100px; left: 100px; width: 180px; object-fit: cover;" />
+        </div>
+    </body>
+
+    <div id="ModalMainMenu" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" style="backdrop-filter: blur(16px);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rainbow-bg" style="border: 0; height: 30rem;">                
+                <div class="modal-body d-flex flex-column justify-content-end align-items-center">
+                    <title class="main-title breath-text">Biboo-Tax</title>                    
+                    <div id="SubtitlePhrase" class="press-start-2p-regular subtitle-phrase">the gaaaame!!</div>
+
+                    <div class="d-flex flex-row" style="width: 100%;">
+                        <div class="d-flex flex-column align-items-center">
+                            <label>Your character</label>
+                            <div class="d-flex align-items-center justify-content-center" style="width: 16rem; height: 14rem;">
+                                <img id="ImgCharacterPreview" style="max-width: 100%; max-height: 100%;">
+                            </div>
+                            <button onclick="OpenChangeCharacterModal()">Change</button>
+                        </div>
+
+                        <div class="d-flex align-items-center">
+                            <button class="box a" onclick="StartGameplay()">Play</button>
+                        </div>
+                    
+                        <main style="height: 100%; display: none;">
+                            <button>
+                                <div>
+                                    <span>Play</span>
+                                </div>
+                            </button>                    
+                        </main>
+                    </div>
+                
+                    <img id="BibooRoll" src="resources/images/biboowalk.gif" style="top: 21.5rem; position: absolute; left: 18rem; width: 16rem; object-fit: cover;" />
+
+                    <label style="color: var(--infoColor); width: 100%; padding-top: 25px;">A game made with ❤ by nekominie</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ModalChooseCharacter" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" style="backdrop-filter: blur(16px);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rainbow-bg" style="border: 0; height: 40rem;">
+                <div class="modal-body d-flex flex-column justify-content-center align-items-center">
+                    <label>Choose your character</label>
+                    <label id="LabelCharacterName"></label>
+
+                    <div id="CarouselCharacters" class="carousel slide" style="width: 100%; height: 100%;">
+                        <div class="carousel-inner" style="height: 100%;"></div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#CarouselCharacters" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#CarouselCharacters" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>                        
+                    </div>
+
+                    <button onclick="HideCharacterSelect()">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</html>
