@@ -48,12 +48,5 @@ const bringToFront = (appId: string) => {
 
 <template>
     <div class="desktop">
-
-        <Window 
-            v-for="app in installedApps.filter(app => app.isOpen)" 
-            :key="app.id" 
-            :app="app"
-            @close="app.isOpen = false"
-        />
     </div>
 </template>
