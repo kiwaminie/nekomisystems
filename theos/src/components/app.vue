@@ -71,25 +71,86 @@
         }
     ])
 
-    const launchApp = (appId: string) => {
-        const app = installedApps.value.find(app => app.id === appId)
+let cascadeOffset = 0;
+
+const launchApp = (appId: string) => {
+    console.log('Attempting to launch: ', appId);
+
+    const app = installedApps.value.find(app => app.id === appId)
     
-        if(app){
-            if(app.isOpen && app.isMinimized){
-                app.isMinimized = false
-            }
-            else{
-                app.isOpen = true
-            }
+    if(app){
+        if(app.isOpen){
+            console.warn('App already open');
 
-            //bringToFront(appId);
-
-            app.position = {
-                x: 0,
-                y: 0
-            }
+            bringToFront(appId);
+            app.isMinimized = false;
+            return;            
         }
+
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+
+        bringToFront(appId);
+
+        app.position = {
+            x: (screenWidth - app.size.width) / 2,
+            y: (screenHeight - app.size.height) / 2
+        };
+        
+        app.isOpen = true;
+        bringToFront(appId);
     }
+    else{
+        console.error('App not found');
+    }
+}
+
+/*const launchApp = (appId: string) => {
+    const app = installedApps.value.find(a => a.id === appId);
+    if (app && !app.isOpen) {
+        const basePoint = {
+            x: (window.innerWidth - app.size.width) / 2,
+            y: (window.innerHeight - app.size.height) / 2
+        };
+
+        // Añadimos el offset y lo aumentamos para la siguiente ventana
+        app.position = {
+            x: basePoint.x + cascadeOffset,
+            y: basePoint.y + cascadeOffset
+        };
+
+        cascadeOffset = (cascadeOffset + 20) % 100; // Reinicia tras 5 ventanas
+        app.isOpen = true;
+        bringToFront(appId);
+    }
+}*/
+
+const topZ = ref(100);
+
+const bringToFront = (appId: string) => {
+    const app = installedApps.value.find(a => a.id === appId);
+    if (app) {
+        const maxZ = Math.max(...installedApps.value.map(a => a.zIndex));
+        
+        if (app.zIndex < maxZ || app.zIndex === 0) {
+            topZ.value++;
+            app.zIndex = topZ.value;
+        }
+        
+        app.isMinimized = false;
+        app.isOpen = true;
+    }
+}
+
+const closeApp = (id: string) => {
+    console.log('Closing window...');
+    const app = installedApps.value.find(app => app.id === id)
+
+    if(app){
+        app.isOpen = false
+    }
+}
+
 </script>
 
 <style scoped>
@@ -112,7 +173,9 @@
     <div class="display main-font" style="height: 100%; width: 100%;">
 
         <Desktop 
-            :installed-apps="installedApps"            
+            :installed-apps="installedApps"
+            @focus-app="bringToFront"      
+            @closeApp="closeApp"
         />
 
         <Taskbar 

@@ -13,19 +13,6 @@ const emit = defineEmits<{
     (e: 'focus', id: string): void
 }>()
 
-const closeWindow = (id: string) => {
-    props.appData.isOpen = false
-}
-const minimizeWindow = (id: string) => {
-    
-}
-const maximizeWindow = (id: string) => {
-    
-}
-const focusWindow = (id: string) => {
-    
-}
-
 const startDrag = (event: MouseEvent) => {
     emit('focus', props.appData.id);
 
@@ -61,9 +48,10 @@ const startDrag = (event: MouseEvent) => {
             width: appData.size.width + 'px',
             height: appData.size.height + 'px'
         }"
+        @mousedown="$emit('focus', appData.id)"
     >
         
-        <div class="window-header" @mousedown="startDrag">
+        <div class="window-header"@mousedown="startDrag">
             <div>
                 {{ appData.name }}
             </div>
@@ -71,9 +59,9 @@ const startDrag = (event: MouseEvent) => {
             <div></div>
 
             <div>
-                <button :clcik="minimizeWindow"><i class="bi bi-dash-lg"></i></button>
-                <button :click="maximizeWindow"><i class="bi bi-arrows-fullscreen"></i></button>
-                <button :clcik.stop="closeWindow"><i class="bi bi-x-lg"></i></button>
+                <button @click.stop="emit('minimize', appData.id)"><i class="bi bi-dash-lg"></i></button>
+                <button @click.stop="emit('maximize', appData.id)"><i class="bi bi-arrows-fullscreen"></i></button>
+                <button @click.stop="emit('close', appData.id)"><i class="bi bi-x-lg"></i></button>
             </div>
         </div>
         <div class="window-content"></div>

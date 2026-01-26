@@ -8,19 +8,22 @@ const props = defineProps<{
     installedApps: AppConfig[]
 }>()
 
-let topZ = 100;
-
-const bringToFront = (appId: string) => {
-    const app = props.installedApps.find(app => app.id === appId)
-    if(app){
-        topZ++;
-        app.zIndex = topZ
-    }
-}
+const emits = defineEmits<{
+    (e: 'focus-app', id: string): void,
+    (e: 'close-app', id: string): void
+}>()
 
 const openedApps = computed(() => {
   return props.installedApps.filter(app => app.isOpen)
 })
+
+
+const minimizeWindow = (id: string) => {
+    
+}
+const maximizeWindow = (id: string) => {
+    
+}
 
 </script>
 
@@ -30,10 +33,16 @@ const openedApps = computed(() => {
 
 <template>
     <div class="desktop">
-        <Window
-            v-for="app in openedApps"
-            :key="app.id"
-            :app-data="app"
-        />
+        <TransitionGroup name="window-spawn">
+            <Window
+                v-for="app in openedApps"
+                :key="app.id"
+                :app-data="app"
+                @close="$emit('close-app', $event)"
+                @minimize="minimizeWindow"
+                @maximize="maximizeWindow"
+                @focus="$emit('focus-app', $event)"
+            />
+        </TransitionGroup>
     </div>
 </template>
