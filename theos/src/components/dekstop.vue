@@ -1,34 +1,12 @@
 <script setup lang="ts">
 
 import type { AppConfig } from '../types'
-import { ref,  } from 'vue'
+import { computed, ref,  } from 'vue'
 import Window from './window.vue'
 
 const props = defineProps<{
     installedApps: AppConfig[]
 }>()
-
-//const openApps = computed(() => installedApps.value.filter(app => app.isOpen))
-
-const openApp = (appId: string) =>{
-    const app = props.installedApps.find(app => app.id === appId)
-    
-    if(app){
-        if(app.isOpen && app.isMinimized){
-            app.isMinimized = false
-        }
-        else{
-            app.isOpen = true
-        }
-
-        bringToFront(appId);
-
-        app.position = {
-            x: 0,
-            y: 0
-        }
-    }
-}
 
 let topZ = 100;
 
@@ -40,6 +18,10 @@ const bringToFront = (appId: string) => {
     }
 }
 
+const openedApps = computed(() => {
+  return props.installedApps.filter(app => app.isOpen)
+})
+
 </script>
 
 <style scoped>
@@ -48,5 +30,10 @@ const bringToFront = (appId: string) => {
 
 <template>
     <div class="desktop">
+        <Window
+            v-for="app in openedApps"
+            :key="app.id"
+            :app-data="app"
+        />
     </div>
 </template>

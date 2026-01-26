@@ -35,10 +35,6 @@ onUnmounted(() => {
     
 </script>
 
-<style>
-
-</style>
-
 <style scoped>
     @import '../styles/taskbar.css';
     @import '../styles/start.css';
@@ -56,6 +52,7 @@ onUnmounted(() => {
             <div class="apps-container" >
                 <div class="app taskbar-btn" v-for="app in pinnedApps" :key="app.id" @click="emit('launchApp', app.id)">
                     <div class="app-icon">
+                        {{ app.id }}
                         <i :class="`${app.icon}`"></i>
                     </div>
                 </div>

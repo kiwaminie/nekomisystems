@@ -69,9 +69,27 @@
                 height: 400
             }
         }
-
     ])
 
+    const launchApp = (appId: string) => {
+        const app = installedApps.value.find(app => app.id === appId)
+    
+        if(app){
+            if(app.isOpen && app.isMinimized){
+                app.isMinimized = false
+            }
+            else{
+                app.isOpen = true
+            }
+
+            //bringToFront(appId);
+
+            app.position = {
+                x: 0,
+                y: 0
+            }
+        }
+    }
 </script>
 
 <style scoped>
@@ -94,11 +112,12 @@
     <div class="display main-font" style="height: 100%; width: 100%;">
 
         <Desktop 
-            :installed-apps="installedApps"
+            :installed-apps="installedApps"            
         />
 
         <Taskbar 
             :pinnedApps="installedApps"
+            @launchApp="launchApp"
         />
     </div>
 </template>

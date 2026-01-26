@@ -1,0 +1,17 @@
+.window-frame{
+    background-color: #464646a3;
+    border-radius: 10px;
+    backdrop-filter: blur(56px);
+    box-shadow: 0px 6px 20px 1px #00000078;
+    position: absolute;
+}
+
+.window-header{
+    background-color: red;
+    display: flex;
+    justify-content: space-between;
+}
+
+.window-content{
+
+}
