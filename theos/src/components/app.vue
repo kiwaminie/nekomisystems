@@ -10,20 +10,16 @@ const installedApps = ref(apps)
 
 let cascadeOffset = 0;
 
-const launchApp = (appId: string) => {
+const taskbarIconClicked = (appId: string) => {
     console.log('Attempting to launch: ', appId);
 
+    desktopComponent.value?.setTransition('minimize');
+
     const app = installedApps.value.find(app => app.id === appId)
-    
-    if(app){
-        if(app.isOpen){
-            console.warn('App already open');
+    if(!app) return;
 
-            bringToFront(appId);
-            app.isMinimized = false;
-            return;            
-        }
-
+    if(!app.isOpen){
+        desktopComponent.value?.setTransition('open');
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
 
@@ -33,16 +29,53 @@ const launchApp = (appId: string) => {
             x: (screenWidth - app.size.width) / 2,
             y: (screenHeight - app.size.height) / 2
         };
-        
+            
         app.isOpen = true;
         bringToFront(appId);
     }
+    else if(app.isMinimized){
+        app.isMinimized = false;
+        bringToFront(appId);
+    }
+    else if(app.isFocused){
+        app.isMinimized = true;
+    }
+    else{
+        bringToFront(appId);
+        app.isMinimized = false;
+    }
+
+    /*if(app){
+
+        if(app.isOpen){
+            console.warn('App already open');
+
+            bringToFront(appId);
+            app.isMinimized = false;
+            return;            
+        }
+        else{
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+
+            bringToFront(appId);
+
+            app.position = {
+                x: (screenWidth - app.size.width) / 2,
+                y: (screenHeight - app.size.height) / 2
+            };
+            
+            app.isOpen = true;
+            bringToFront(appId);
+        }*/
+
+    /*}
     else{
         console.error('App not found');
-    }
+    }*/
 }
 
-/*const launchApp = (appId: string) => {
+/*const taskbarIconClicked = (appId: string) => {
     const app = installedApps.value.find(a => a.id === appId);
     if (app && !app.isOpen) {
         const basePoint = {
@@ -64,6 +97,8 @@ const launchApp = (appId: string) => {
 
 const topZ = ref(100);
 
+const desktopComponent = ref<InstanceType<typeof Desktop> | null>(null);
+
 const bringToFront = (appId: string) => {
     const app = installedApps.value.find(a => a.id === appId);
     if (app) {
@@ -84,10 +119,10 @@ const bringToFront = (appId: string) => {
 }
 
 const closeApp = (id: string) => {
-    console.log('Closing window...');
     const app = installedApps.value.find(app => app.id === id)
 
     if(app){
+        desktopComponent.value?.setTransition('open');
         app.isOpen = false
     }
 }
@@ -127,7 +162,7 @@ onMounted(() => {
 <template>
     <div class="display main-font" style="height: 100%; width: 100%;">
 
-        <Desktop 
+        <Desktop ref="desktopComponent"
             :installed-apps="installedApps"
             @focus-app="bringToFront"      
             @closeApp="closeApp"
@@ -135,7 +170,7 @@ onMounted(() => {
 
         <Taskbar 
             :pinnedApps="installedApps"
-            @launchApp="launchApp"
+            @taskbar-icon-clicked="taskbarIconClicked"
         />
     </div>
 </template>

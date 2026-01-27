@@ -8,7 +8,7 @@ defineProps<{
 }>()
 
 const emit = defineEmits<{
-    (e: 'launchApp', id: string): void
+    (e: 'taskbar-icon-clicked', id: string): void,
 }>()
 
 const currentTime = ref('')
@@ -50,7 +50,7 @@ onUnmounted(() => {
             </div>
 
             <div class="apps-container" >
-                <div class="app" v-for="app in pinnedApps" :key="app.id" @click="emit('launchApp', app.id)">
+                <div class="app" v-for="app in pinnedApps" :key="app.id" @click="emit('taskbar-icon-clicked', app.id)">
                     <div class="taskbar-btn app-icon" 
                     :class="{ 'running-app': app.isOpen, 'focused-app': app.isFocused }">                        
                         <i :class="`${app.icon}`"></i>

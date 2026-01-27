@@ -1,7 +1,7 @@
 import type { AppConfig } from '../types'
 
 export const apps: AppConfig[] = [
-            {
+        {
             id: 'notepad',
             name: 'Notepad',
             icon: 'bi-journals',

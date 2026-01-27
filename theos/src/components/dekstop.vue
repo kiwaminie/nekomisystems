@@ -16,12 +16,24 @@ const emits = defineEmits<{
 }>()
 
 const openedApps = computed(() => {
-  return props.installedApps.filter(app => app.isOpen)
+  return props.installedApps.filter(app => app.isOpen && !app.isMinimized)
 })
 
-const minimizeWindow = (id: string) => {
-    
+const transitionName = ref('window-open');
+
+const setTransition = (type: 'open' | 'minimize') => {
+    transitionName.value = type === 'open' ? 'window-spawn' : 'window-minimize';
 }
+
+const minimizeWindow = (id: string) => {
+    const app = props.installedApps.find(app => app.id === id);
+    if (app) {
+        setTransition('minimize');
+        app.isMinimized = true;
+        app.isFocused = false;
+    }
+}
+
 const maximizeWindow = (id: string) => {
     const app = props.installedApps.find(a => a.id === id);
     if (!app) return;
@@ -45,6 +57,8 @@ const maximizeWindow = (id: string) => {
     }
 }
 
+defineExpose({ setTransition })
+
 </script>
 
 <style scoped>
@@ -53,7 +67,7 @@ const maximizeWindow = (id: string) => {
 
 <template>
     <div class="desktop">
-        <TransitionGroup name="window-spawn">
+        <TransitionGroup :name="transitionName">
             <Window
                 v-for="app in openedApps"
                 :key="app.id"

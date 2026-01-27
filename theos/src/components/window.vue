@@ -18,15 +18,29 @@ const emit = defineEmits<{
 const isDragging = ref(false);
 
 const startDrag = (event: MouseEvent) => {
-
     isDragging.value = true;
-
     emit('focus', props.appData.id);
 
-    const startX = event.clientX - props.appData.position.x;
-    const startY = event.clientY - props.appData.position.y;
+    let startX = event.clientX - props.appData.position.x;
+    let startY = event.clientY - props.appData.position.y;
 
     const onMouseMove = (e: MouseEvent) => {
+        if(props.appData.isMaximized){
+            const mouseXRatio = event.clientX / window.innerWidth;
+
+            const restoredWidth = props.appData.tempSettings?.size.width || 600;
+            const newX = event.clientX - (restoredWidth * mouseXRatio);
+
+            props.appData.isMaximized = false;
+            props.appData.position.x = newX;
+            props.appData.position.y = 0;
+
+            startX = event.clientX - props.appData.position.x;
+            startY = event.clientY - props.appData.position.y;
+            
+            return;
+        }
+                        
         props.appData.position.x = e.clientX - startX;
         props.appData.position.y = e.clientY - startY;
 
@@ -39,9 +53,9 @@ const startDrag = (event: MouseEvent) => {
 
         newX = Math.max(0, Math.min(newX, maxX));
         newY = Math.max(0, Math.min(newY, maxY));*/
-       // # # # # # # #
+        // # # # # # # #
 
-       // # # # # LA VENTANA NO SE PUEDE MOVER FUERA DE LA PANTALLA VERTICALMENTE
+        // # # # # LA VENTANA NO SE PUEDE MOVER FUERA DE LA PANTALLA VERTICALMENTE
         const minVisibleWidth = 100;
         const minX = -(props.appData.size.width - minVisibleWidth);
         const maxX = window.innerWidth - minVisibleWidth;
@@ -51,10 +65,10 @@ const startDrag = (event: MouseEvent) => {
         const taskbarHeight = 48; 
         const maxY = window.innerHeight - taskbarHeight - 26;
         newY = Math.max(0, Math.min(newY, maxY));
-       // # # # # # # #   
+        // # # # # # # #   
 
         props.appData.position.x = newX;
-        props.appData.position.y = newY;
+        props.appData.position.y = newY;        
     };
 
     const onMouseUp = () => {
@@ -108,7 +122,7 @@ const windowStyles = computed(() => {
         @mousedown="$emit('focus', appData.id)"
     >
         
-        <div class="window-header"@mousedown="startDrag">
+        <div class="window-header"@mousedown="startDrag" @dblclick="$emit('maximize', appData.id)">
             <div class="window-header-titles">
                 <i :class="appData.icon"></i>
                 <div>{{ appData.name }}</div>
