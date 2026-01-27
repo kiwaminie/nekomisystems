@@ -19,6 +19,16 @@
     -ms-user-select: none;
 }
 
+.no-transitions{
+    transition: none !important;
+}
+
+.resizing * {
+    cursor: inherit !important;
+    pointer-events: none !important;
+    user-select: none !important;
+}
+
 .window-frame.dragging{
     transition: none !important;
     user-select: none;
@@ -111,3 +121,22 @@
 .maximized.window-frame{
     border-radius: 0 !important;
 }
+
+/* Contenedor de las manijas */
+.resizer {
+    position: absolute;
+    z-index: 100; /* Asegúrate de que esté por encima del contenido */
+    /*background: rgba(255, 0, 0, 0.2);*/
+}
+
+/* Bordes Cardinales */
+.resizer.n { top: -4px; left: 4px; right: 4px; height: 8px; cursor: n-resize; }
+.resizer.s { bottom: -4px; left: 4px; right: 4px; height: 8px; cursor: s-resize; }
+.resizer.e { right: -4px; top: 4px; bottom: 4px; width: 8px; cursor: e-resize; }
+.resizer.w { left: -4px; top: 4px; bottom: 4px; width: 8px; cursor: w-resize; }
+
+/* Esquinas (Deben ser más grandes para que sean fáciles de agarrar) */
+.resizer.nw { top: -4px; left: -4px; width: 12px; height: 12px; cursor: nw-resize; z-index: 101; }
+.resizer.ne { top: -4px; right: -4px; width: 12px; height: 12px; cursor: ne-resize; z-index: 101; }
+.resizer.sw { bottom: -4px; left: -4px; width: 12px; height: 12px; cursor: sw-resize; z-index: 101; }
+.resizer.se { bottom: -4px; right: -4px; width: 12px; height: 12px; cursor: se-resize; z-index: 101; }

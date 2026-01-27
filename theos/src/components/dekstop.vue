@@ -16,7 +16,7 @@ const emits = defineEmits<{
 }>()
 
 const openedApps = computed(() => {
-  return props.installedApps.filter(app => app.isOpen && !app.isMinimized)
+  return props.installedApps.filter(app => app.isOpen)
 })
 
 const transitionName = ref('window-open');
@@ -70,6 +70,7 @@ defineExpose({ setTransition })
         <TransitionGroup :name="transitionName">
             <Window
                 v-for="app in openedApps"
+                v-show="!app.isMinimized"
                 :key="app.id"
                 :app-data="app"
                 :component="appComponents[app.id]"
