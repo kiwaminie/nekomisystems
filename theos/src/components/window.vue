@@ -128,32 +128,41 @@ const startResize = (direction: string, event: MouseEvent) => {
 
     const onMouseMove = (e: MouseEvent) => {
         if(!ticking){
-            window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {                
 
                 const deltaX = e.clientX - startX;
                 const deltaY = e.clientY - startY;
 
+                const defaultWidth = 200;
+                const defaultHeight = 200;
+
+                const appMinWidth = props.appData.minSize?.width;
+                const appMinHeight = props.appData.minSize?.height;
+
+                const minW = (appMinWidth == 0) || (appMinWidth == undefined) ? defaultWidth : appMinWidth; 
+                const minH = (appMinHeight == 0) || (appMinHeight == undefined) ? defaultHeight : appMinHeight;
+
                 if (direction.includes('e')) {
-                    props.appData.size.width = Math.max(200, startWidth + deltaX);
+                    props.appData.size.width = Math.max(minW, startWidth + deltaX);
                 }
 
                 if (direction.includes('w')) {
-                    const newWidth = Math.max(200, startWidth - deltaX);
+                    const newWidth = Math.max(minW, startWidth - deltaX);
                     
-                    if (newWidth !== 200) {
+                    if (newWidth !== minW) {
                         props.appData.size.width = newWidth;
                         props.appData.position.x = startPosX + deltaX;
                     }
                 }
 
                 if (direction.includes('s')) {
-                    props.appData.size.height = Math.max(150, startHeight + deltaY);
+                    props.appData.size.height = Math.max(minH, startHeight + deltaY);
                 }
 
                 if (direction.includes('n')) {            
-                    const newHeight = Math.max(150, startHeight - deltaY);
+                    const newHeight = Math.max(minH, startHeight - deltaY);
                     
-                    if (newHeight !== 150) {
+                    if (newHeight !== minH) {
                         props.appData.size.height = newHeight;
                         props.appData.position.y = startPosY + deltaY;
                     }
@@ -228,6 +237,13 @@ const startResize = (direction: string, event: MouseEvent) => {
         </div>
 
         <div class="window-content">
+
+            <div
+                class="cursor-shield"
+                v-if="isDragging || isResizing"                
+            >
+            </div>
+
             <component :is="component" v-if="component" />
             <div v-else>El componente no se encuentra</div>
         </div>

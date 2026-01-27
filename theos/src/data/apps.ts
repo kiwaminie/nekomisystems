@@ -106,7 +106,9 @@ export const apps: AppConfig[] = [
             tempSettings: {
                 position: { x: 0, y: 0, },
                 size: { width: 0, height: 0 }
-            }
+            },
+            minSize: { width: 550, height: 400 },
+            maxSize: { width: 0, height: 352 }
         }
 
 ]
