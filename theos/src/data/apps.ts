@@ -111,7 +111,7 @@ export const apps: AppConfig[] = [
             maxSize: { width: 0, height: 352 }
         },
         {
-            id: 'bibootax-game',
+            id: 'bibootaxgame',
             name: 'Biboo Tax Game',
             icon: 'bi-controller',
             isOpen: false,
