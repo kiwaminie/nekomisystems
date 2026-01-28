@@ -1,14 +1,9 @@
+<script setup lang="ts">
+const gameUrl = `${import.meta.env.VITE_GAME_URL}/bibootaxgame/`
+</script>
+
 <template>
-  <iframe 
-    src="http://localhost:5173/bibootaxgame/" 
-    class="full-frame"
-    frameborder="0"
+  <iframe style="width: 100%; height: 100%;" 
+    :src="gameUrl"
   ></iframe>
 </template>
-
-<style scoped>
-.full-frame {
-  width: 100%;
-  height: 100%;
-}
-</style>

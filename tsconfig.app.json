@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "types": ["vite/client"]
+  },
+  "include": [
+    "src/**/*.ts", 
+    "src/**/*.d.ts", 
+    "src/**/*.tsx", 
+    "src/**/*.vue", 
+    "env.d.ts",
+    "vite-env.d.ts"
+  ]
+}
