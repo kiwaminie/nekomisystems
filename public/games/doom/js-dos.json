@@ -1,0 +1,5 @@
+{
+  "name": "DOOM",
+  "mainProgram": "DOOM.EXE",
+  "extraArgs": []
+}
