@@ -1,6 +1,6 @@
 <script setup lang="ts">
 
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import type { AppConfig } from '../types';
 import Startmenu from './startmenu.vue';
 
@@ -47,6 +47,10 @@ onMounted(() => {
 onUnmounted(() => {
     clearInterval(timer)
 })
+
+const isImage = (iconString: string) => {
+    return /\.(jpg|jpeg|png|webp|avif|svg)$/.test(iconString) || iconString.startsWith('/');
+}
     
 </script>
 
@@ -77,8 +81,21 @@ onUnmounted(() => {
             <div class="apps-container" >
                 <div class="app" v-for="app in pinnedApps" :key="app.id" @click="emit('taskbar-icon-clicked', app.id)">
                     <div class="taskbar-btn app-icon" 
-                    :class="{ 'running-app': app.isOpen, 'focused-app': app.isFocused }">                        
-                        <i :class="`${app.icon}`"></i>
+                    :class="{ 'running-app': app.isOpen, 'focused-app': app.isFocused }">  
+
+                    <img
+                        v-if="isImage(app.icon)"
+                        :src="app.icon"
+                        class="taskbar-icon-element"
+                    >
+                    
+                    <i
+                        v-else 
+                        :class="app.icon"
+                        class="taskbar-icon-element"
+                    >
+                    </i>
+                    
                     </div>
                 </div>
             </div>

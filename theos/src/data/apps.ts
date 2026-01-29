@@ -123,15 +123,39 @@ export const apps: AppConfig[] = [
                 y: 0
             },
             size: {
-                width: 600,
-                height: 400
+                width: 1000,
+                height: 750
             },
             isMaximized: false,
             tempSettings: {
                 position: { x: 0, y: 0, },
                 size: { width: 0, height: 0 }
             },
-            minSize: { width: 550, height: 400 },
+            minSize: { width: 1000, height: 750 },
+            maxSize: { width: 0, height: 352 }
+        },
+        {
+            id: 'doomgame',
+            name: 'Doom Game',
+            icon: '/games/doom/doom_icon.png',
+            isOpen: false,
+            isMinimized: false,
+            isFocused: false,
+            zIndex: 0,
+            position: {
+                x: 0,
+                y: 0
+            },
+            size: {
+                width: 640,
+                height: 426
+            },
+            isMaximized: false,
+            tempSettings: {
+                position: { x: 0, y: 0, },
+                size: { width: 0, height: 0 }
+            },
+            minSize: { width: 640, height: 426 },
             maxSize: { width: 0, height: 352 }
         }
 
