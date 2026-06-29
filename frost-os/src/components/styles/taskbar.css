@@ -1,9 +1,9 @@
 .taskbar{
     height: 41px;
-    background-color: #00000066;
+    background-color: var(--frst-bg-light) /*#00000066*/;
     position: absolute;
     width: 100%;
-    backdrop-filter: blur(6px);
+    backdrop-filter: var(--frst-blur-normal);
     padding: 0.2% 0px;
     z-index: 1000;
 }

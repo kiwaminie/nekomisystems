@@ -1,3 +1,4 @@
+import { AppStorage } from '../../database/app_storage';
 import { MenuItemDescriptor, AppMenuContext } from '../data/types'
 
 type SnippetKind = "flyout" | "widget"
@@ -76,7 +77,16 @@ export interface Runtime{
 
     previewImg? : string,
 
-    stats?: RuntimeStats
+    stats?: RuntimeStats,
+
+    storage?: IAppStorage
+}
+
+export interface IAppStorage {
+  get: (key: string, defaultValue?: any) => Promise<any>;
+  set: (key: string, value: any) => Promise<void>;
+  delete: (key: string) => Promise<void>;
+  getAll: () => Promise<any[]>;
 }
 
 export interface WindowInstance {

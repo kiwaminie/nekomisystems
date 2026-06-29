@@ -35,7 +35,7 @@ const pinnedStartApps = computed(() => {
     return os.state.apps.filter(app => app.user.isPinnedStart)
 })
 
-const traySnippets = computed(() => os.state.snippets.filter(snippet => snippet.runtime.isInTray))
+const traySnippets = computed(() => os.state.snippets.filter(snippet => snippet.runtime.isInTray || snippet.manifest.preferences?.startInTray))
 
 // Primero, obtenemos la ventana principal de la app para el preview
 const activeWindowForPreview = computed(() => {

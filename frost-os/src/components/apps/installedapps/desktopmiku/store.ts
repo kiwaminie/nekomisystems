@@ -1,19 +1,12 @@
-import { reactive } from 'vue'
+import { defineStore } from 'pinia';
+import { reactive, ref } from 'vue';
 
-const stores = new Map<string, ReturnType<typeof createDesktopMikuStore>>()
-
-function createDesktopMikuStore() {
-  // 2. Instanciamos el store global directamente
-
+export const useDesktopMikuStore = defineStore('app_desktopmiku', () => {
+  // 1. Estado Reactivo
   const state = reactive({
-      currentAnimation: 'idle',
-      isHappy: true
-  })
+    currentAnimation: 'idle',
+    isHappy: true
+  });
 
-  return { state }
-}
-
-export function useDesktopMikuStore(appId: string) {
-  if (!stores.has(appId)) stores.set(appId, createDesktopMikuStore())
-  return stores.get(appId)!
-}
+  return { state };
+});

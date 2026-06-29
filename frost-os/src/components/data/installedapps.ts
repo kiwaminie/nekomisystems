@@ -86,7 +86,7 @@ export const InstalledApps: Manifest[] = [
         name: 'Desktop Miku',    
         snippet: {
             kind: "flyout",
-            mount: "boot"
+            mount: "user"
         },
         window: {
             defaultSize: { width: 1500, height: 850 },
@@ -106,7 +106,7 @@ export const InstalledApps: Manifest[] = [
             ]            
         },
         preferences: {
-            startInTray: true,
+            startInTray: false,
             minimizeToTray: true,
             closeToTray: true,
             startupWindow: "stealth"

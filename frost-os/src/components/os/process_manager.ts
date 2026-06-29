@@ -9,6 +9,8 @@ import { CoreApps } from '../data/core_apps.ts'
 import { CoreSnippets } from '../data/core_snippets.ts'
 import { InstalledSnippets } from '../data/installed_snippets.ts'
 
+import { AppStorage } from "../../database/app_storage.ts"
+
 import { startStatsSampler, measureCpu } from './process_stats'
 
 import { db } from '../../database/db.ts'
@@ -43,26 +45,31 @@ async function init() {
 
     // Inicialización de tray apps
     for (const app of state.apps) {
-            const prefs = app.manifest.preferences;
-            
-            if (prefs?.startInTray) {
-                // Caso Base: La app arranca en memoria
+            const canUseTray = app.manifest.capabilities?.tray?.canUse;
+            const shouldStartInTray = app.user.overrides?.startInTray ?? app.manifest.preferences?.startInTray;
+
+            if (shouldStartInTray && canUseTray) {
+
                 app.runtime.isRunning = true;
                 app.runtime.isInTray = true;
-                app.runtime.stats = initStats();
-
-                // CASO 1: Solo Tray (Sin ventana)
-                // No hacemos nada más. Al no llamar a createWindow, no aparece en Taskbar ni Desktop.
                 
-                // CASO 2: Tray + Minimizada en Taskbar
-                if (prefs.startupWindow === 'minimized') {
-                    const win = createWindow(app.manifest.id, { isMinimized: true });
-                }
+                app.runtime.storage = new AppStorage(app.manifest.id);
+                
+                app.runtime.stats = initStats();
+                
+                const startupMode = app.manifest.preferences?.startupWindow;
 
-                // CASO 3: Tray + Abierta (Sin Taskbar) - Útil para Widgets/Miku
-                if (prefs.startupWindow === 'stealth') {
+                // CASO 1: Tray + Minimizada en Taskbar
+                if (startupMode === 'minimized') {
                     createWindow(app.manifest.id, { 
-                        params: { hideFromTaskbar: true } 
+                        isMinimized: true 
+                    });
+                }
+                // CASO 2: Tray + Abierta (Sin Taskbar) - Útil para Widgets/Miku
+                else if (startupMode === 'stealth') {
+                    createWindow(app.manifest.id,{ 
+                        hideFromTaskbar: true, 
+                        isMinimized: true 
                     });
                 }
             }
@@ -72,13 +79,8 @@ async function init() {
         if (snippet.manifest.snippet?.mount === "boot") {
             snippet.runtime.isRunning = true;
             snippet.runtime.isMounted = true;
-            
-            // Si Miku necesita una ventana stealth al arrancar:
-            if (snippet.manifest.id === 'desktopmiku') {
-                createWindow(snippet.manifest.id, { 
-                    params: { hideFromTaskbar: true } 
-                });
-            }
+
+            snippet.runtime.storage = new AppStorage(snippet.manifest.id);
         }
     }
 
@@ -179,70 +181,24 @@ const togglePinAppStart = async (id: string) => {
         }
 }
 
-    /*const launchApp = async (appId: string, params = {}, parentWinId?: string) => {
-        const app = state.apps.find(a => a.manifest.id === appId)
-        if (!app) return
-
-        let pid: string
-
-        if (parentWinId) {
-            const parentWin = state.windows.find(w => w.id === parentWinId)
-            pid = parentWin ? parentWin.pid : `proc-${Math.random().toString(36).slice(2, 9)}`
-        } else {
-            pid = `proc-${Math.random().toString(36).slice(2, 9)}`
-            app.runtime.isRunning = true
-            ensureStats(app)
-        }
-
-        const winId = `win-${Math.random().toString(36).slice(2, 9)}`
-        const defaultSize = app.manifest.window?.defaultSize ?? { width: 600, height: 400 }
-
-        // Calculamos la posición inicial (fuera del objeto para mayor claridad)
-        const initialPosition = {
-            x: (window.innerWidth - defaultSize.width) / 2 + (state.windows.length * 20),
-            y: (window.innerHeight - defaultSize.height) / 2 + (state.windows.length * 20)
-        }
-
-        const newWindow: WindowInstance = {
-            id: winId,
-            pid: pid,
-            appId: appId,
-            parentWinId: parentWinId,
-            //view: params.view || "Main",
-            title: app.manifest.name,
-            isMain: !parentWinId,
-            isMinimized: false,
-            isMaximized: false, // La ventana nace normal
-            isFocused: true,
-            zIndex: ++state.topZ,
-            
-            // --- ESTADO ACTIVO (Obligatorio) ---
-            position: initialPosition,
-            size: { ...defaultSize },
-            
-            // --- ESTADO GUARDADO (Opcional, vacío al nacer) ---
-            tempSettings: undefined, 
-            
-            params: params
-        };
-
-        state.windows.push(newWindow);
-        bringToFront(winId);
-    }*/
-
-    const launchApp = async (appId: string, params = {}, parentWinId?: string) => {
+const launchApp = async (appId: string, params = {}, parentWinId?: string) => {
         const app = state.apps.find(a => a.manifest.id === appId);
         if (!app) return;
 
         if (!app.runtime.isRunning) {
+
+            //INICIAR PROCESO
             app.runtime.isRunning = true;
-            ensureStats(app);
+
+            app.runtime.storage = new AppStorage(appId);
+
+            //ensureStats(app)
         }
 
         return createWindow(appId, params, parentWinId);
-    }
+}
 
-    const closeWindow = (winId: string) => {
+const closeWindow = (winId: string) => {
         const win = state.windows.find(w => w.id === winId);
         if (!win) return;
 
@@ -256,23 +212,23 @@ const togglePinAppStart = async (id: string) => {
             siblingWindows.forEach(s => closeWindow(s.id));
             checkProcessTermination(win.appId);
         }
-    }
+}
 
-    const checkProcessTermination = (appId: string) => {
+const checkProcessTermination = (appId: string) => {
         const stillHasWindows = state.windows.some(w => w.appId === appId);
         if (!stillHasWindows) {
             const app = state.apps.find(a => a.manifest.id === appId);
             if (app) app.runtime.isRunning = false;
         }
-    }
+}
 
-    const closeApp = (appId: string) => {
+const closeApp = (appId: string) => {
         state.windows = state.windows.filter(w => w.appId !== appId)
         const app = state.apps.find(a => a.manifest.id === appId)
         if (app) app.runtime.isRunning = false
-    }
+}
 
-    const bringToFront = (winId: string) => {
+const bringToFront = (winId: string) => {
         const win = state.windows.find(w => w.id === winId)
         if (!win) return
 
@@ -281,9 +237,9 @@ const togglePinAppStart = async (id: string) => {
         win.zIndex = state.topZ
         win.isFocused = true
         win.isMinimized = false
-    }
+}
 
-    const minimizeWindow = async (winId: string) => {
+const minimizeWindow = async (winId: string) => {
         const win = state.windows.find(w => w.id === winId)
         if (win) {
             state.lastAction = 'window-minimize'
@@ -296,9 +252,9 @@ const togglePinAppStart = async (id: string) => {
                 .sort((a, b) => b.zIndex - a.zIndex)[0]
             if (nextWin) bringToFront(nextWin.id)
         }
-    }
+}
 
-    const maximizeWindow = (winId: string) => {
+const maximizeWindow = (winId: string) => {
         const win = state.windows.find(w => w.id === winId);
         if (!win) return;
 
@@ -326,10 +282,10 @@ const togglePinAppStart = async (id: string) => {
             win.isMaximized = false;
             win.tempSettings = undefined; 
         }
-    }
+}
 
-    // Esta función es para cuando arrastras el header estando maximizado
-    const unmaximizeAtPosition = (winId: string, newX: number) => {
+// Esta función es para cuando arrastras el header estando maximizado
+const unmaximizeAtPosition = (winId: string, newX: number) => {
         const win = state.windows.find(w => w.id === winId);
         if (!win || !win.isMaximized || !win.tempSettings) return;
 
@@ -346,9 +302,9 @@ const togglePinAppStart = async (id: string) => {
             x: newX - (restoredWidth * ratio), 
             y: 0 // Lo mantenemos arriba para que siga el drag
         };
-    }
+}
 
-    const updatePreviewImage = async (winId: string) => {
+const updatePreviewImage = async (winId: string) => {
         const win = state.windows.find(w => w.id === winId);
         if (!win) return; // Ahora winId será win-xyz, no spotify
 
@@ -366,9 +322,9 @@ const togglePinAppStart = async (id: string) => {
         } catch (err) {
             console.error("Error capturando preview:", err);
         }
-    }
+}
 
-    const showSnippet = async (id: string) => {
+const showSnippet = async (id: string) => {
         const s = state.snippets.find(a => a.manifest.id === id)
         if(!s) return
         s.runtime.isRunning = true
@@ -378,27 +334,27 @@ const togglePinAppStart = async (id: string) => {
         s.runtime.isVisible = false
         await nextTick()
         requestAnimationFrame(() => { s.runtime.isVisible = true })
-    }
+}
 
-    const hideSnippet = (id: string) => {
+const hideSnippet = (id: string) => {
         const s = state.snippets.find(a => a.manifest.id === id)
         if(!s) return
         s.runtime.isVisible = false
-    }
+}
 
-    const unmountSnippet = (id: string) => {
+const unmountSnippet = (id: string) => {
         const s = state.snippets.find(a => a.manifest.id === id)
         if(!s) return
         s.runtime.isMounted = false
-    }
+}
 
-    const measure = <T>(id: string, fn: () => T | Promise<T>) => {
+const measure = <T>(id: string, fn: () => T | Promise<T>) => {
         const app = state.apps.find(a => a.manifest.id === id)
             ?? state.snippets.find(s => s.manifest.id === id)
         if (!app) return Promise.resolve(fn() as any)
         ensureStats(app)
         return measureCpu(app, fn)
-    }
+}
 
 export const processInstructions = () => {    
     init().catch(err => console.error(err))

@@ -19,7 +19,11 @@
     --frst-font-normal: rgba(255, 255, 255, 0.829);
     --frst-font-light: rgba(255, 255, 255, 0.637);
 
-    --frst-blur-normal: 40px;
+    --frst-blur-light: blur(6px);
+    --frst-blur-normal: blur(16px);
+    --frst-blur-dark: 40px;
+    --frst-blur-pitch-black: 20px;
+
 }
 
 .frst-bg-light{
@@ -63,6 +67,15 @@
   border-radius: 5px;
   padding: 5px;
   border: 0;
+}
+
+.frst-file-input{
+  background-color: var(--frst-bg-dark);
+  color: var(--frst-font-light);
+  border-radius: 5px;
+  padding: 5px;
+  border: 0;
+  cursor: pointer;
 }
 
 .frst-txt-input:focus{

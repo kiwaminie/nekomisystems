@@ -35,7 +35,7 @@ export class TheOSDatabase extends Dexie {
   assets!: Table<Asset>;
 
   constructor() {
-    super('MyOSDatabase');
+    super('FROST_OS_ROOT');
 
     // Mantener versiones anteriores para compatibilidad
     this.version(1).stores({ appSettings: 'id' });

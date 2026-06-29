@@ -12,6 +12,10 @@ export const CoreApps: Manifest[] = [
     {
         id: 'settings',
         name: 'Configuración',
+        window: {
+            defaultSize: { width: 1100, height: 650 },
+            minSize: { width: 1100, height: 650 },
+        }
     },
     {
         id: "run",

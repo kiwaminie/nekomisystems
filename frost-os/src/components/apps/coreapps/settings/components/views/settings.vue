@@ -58,7 +58,7 @@ const filteredSections = computed(() => {
 </script>
 
 <template>
-  <div class="settings-shell frst-bg-pitch-black">
+  <div class="settings-shell frst-bg-dark">
     <aside class="sidebar">
       <div class="profile-card glass-card">
         <div class="avatar">
@@ -153,10 +153,16 @@ const filteredSections = computed(() => {
 
       <section v-else-if="activeSection === 'personalization'" class="section-content">
         <div class="grid one">
-          <article class="setting-card glass-card">
+          <article class="setting-card glass-card" style="gap: 10px;">
+            
             <h3><i class="bi bi-image"></i>Wallpaper</h3>
-            <p class="sub">Selecciona una foto para el fondo del escritorio</p>
-            <div class="wallpaper-grid">
+            <p class="sub">Selecciona una imagen para el fondo del escritorio</p>
+
+            <div v-if="settings.wallpaperUrl" class="preview">
+              <img :src="settings.wallpaperUrl" alt="Preview" />
+            </div>
+
+            <div class="wallpaper-grid" style="display: none;">
               <button
                 v-for="wall in wallpapers"
                 :key="wall.id"
@@ -170,18 +176,22 @@ const filteredSections = computed(() => {
             </div>
 
             <input 
+              style="display: none;"
+              id="wallpaper-upload"
               type="file" 
               accept="image/*" 
-              @change="handleWallpaperChange" 
+              @change="handleWallpaperChange"
             />
 
-            <div v-if="settings.wallpaperUrl" class="preview">
-              <img :src="settings.wallpaperUrl" alt="Preview" />
-            </div>
+            <label for="wallpaper-upload" class="frst-file-input">
+                <i class="icon-upload"></i> <!-- O el icono que uses -->
+                Seleccionar imagen
+            </label>
+
           </article>
 
           <article class="setting-card glass-card">
-            <h3><i class="bi bi-palette"></i> Theme colors</h3>
+            <h3><i class="bi bi-palette"></i>Tema</h3>
             <div class="theme-swatches">
               <button class="swatch sw1"></button>
               <button class="swatch sw2"></button>
@@ -189,6 +199,16 @@ const filteredSections = computed(() => {
               <button class="swatch sw4"></button>
               <button class="swatch sw5"></button>
             </div>
+
+            <p class="sub">Color de interfaz</p>
+
+            <input type="color" v-model="settings.themeColor">
+
+            <p class="sub">Intensidad del difuminado</p>
+
+            <input type="range" v-model="settings.accentColor">
+
+
           </article>
         </div>
       </section>
@@ -265,11 +285,10 @@ const filteredSections = computed(() => {
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  backdrop-filter: blur(18px);
+  background: var(--frst-bg-light) /*rgba(255, 255, 255, 0.08)*/;
+  backdrop-filter: var(--frst-blur-normal);
   -webkit-backdrop-filter: blur(18px);
-  border-radius: 14px;
+  border-radius: 6px;
 }
 
 .sidebar {

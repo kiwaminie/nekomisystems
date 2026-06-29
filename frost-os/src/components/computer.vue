@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import Boot from './os/boot.vue'
 import Kernel from './os/kernel.vue'
+import { useSettingsStore } from "../components/apps/coreapps/settings/store"
 
 const pcOn = ref(false);
 const loadedOs = ref(false);
@@ -15,7 +16,7 @@ const hideHardware = ref(false);
 const shrink = ref(false);
 const slideUp = ref(false);
 
-onMounted(() => {
+onMounted(async () => {
     const savedStatus = localStorage.getItem('pc_power_state');
 
     if(savedStatus === 'on') {
@@ -26,6 +27,9 @@ onMounted(() => {
     else{
         pcOn.value = false;
     }
+
+    const settings = useSettingsStore();
+    await settings.loadSettings();
 })
 
 const powerButtonClick = () => {
