@@ -1,16 +1,19 @@
 <!DOCTYPE html>
-
-<html class="dark" lang="en">
+<html class="dark" lang="es">
 
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>NekomiSystems: Portfolio</title>
+    <title>David A. Zepeda — Desarrollador Fullstack</title>
+    <meta name="description"
+        content="Portafolio de David A. Zepeda, desarrollador fullstack. Tecnologías, experiencia y proyectos." />
+
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&amp;display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;600;700&display=swap"
         rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script id="tailwind-config">
         tailwind.config = {
@@ -19,160 +22,521 @@
                 extend: {
                     colors: {
                         "primary": "#4b2bee",
+                        "accent": "#22d3ee",
                         "background-light": "#f6f6f8",
-                        "background-dark": "#131022",
+                        "background-dark": "#0b0916",
+                        "surface": "#131022",
                     },
                     fontFamily: {
                         "display": ["Spline Sans", "sans-serif"]
                     },
-                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                    keyframes: {
+                        "fade-up": {
+                            "0%": { opacity: "0", transform: "translateY(24px)" },
+                            "100%": { opacity: "1", transform: "translateY(0)" },
+                        },
+                        "float": {
+                            "0%,100%": { transform: "translateY(0)" },
+                            "50%": { transform: "translateY(-16px)" },
+                        },
+                    },
+                    animation: {
+                        "float": "float 6s ease-in-out infinite",
+                    },
                 },
             },
         }
 
+        // Preserve legacy redirect for the frost-os submodule.
         if (window.location.pathname.includes('/theos')) {
             window.location.replace(window.location.href.replace('/theos', '/frost-os'));
         }
     </script>
+
     <style>
-        .glow-effect {
-            position: absolute;
-            top: 5%;
-            left: 50%;
-            width: 80vw;
-            height: 80vw;
-            max-width: 600px;
-            max-height: 600px;
-            background-image: radial-gradient(circle at center, rgba(75, 43, 238, 0.25) 0%, rgba(75, 43, 238, 0) 60%);
-            transform: translateX(-50%);
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 6rem;
+        }
+
+        body {
+            min-height: 100dvh;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Animated, blurred gradient blobs for the background. */
+        .bg-decor {
+            position: fixed;
+            inset: 0;
+            overflow: hidden;
             pointer-events: none;
             z-index: 0;
         }
-    </style>
-    <style>
-        body {
-            min-height: max(884px, 100dvh);
+
+        .blob {
+            position: absolute;
+            border-radius: 9999px;
+            filter: blur(90px);
+            opacity: 0.55;
+            will-change: transform;
+        }
+
+        .blob-1 {
+            top: -10%;
+            left: 50%;
+            width: 60vw;
+            height: 60vw;
+            max-width: 720px;
+            max-height: 720px;
+            transform: translateX(-50%);
+            background: radial-gradient(circle at center, rgba(75, 43, 238, 0.55) 0%, rgba(75, 43, 238, 0) 65%);
+            animation: float 9s ease-in-out infinite;
+        }
+
+        .blob-2 {
+            top: 30%;
+            left: -10%;
+            width: 45vw;
+            height: 45vw;
+            max-width: 520px;
+            max-height: 520px;
+            background: radial-gradient(circle at center, rgba(34, 211, 238, 0.35) 0%, rgba(34, 211, 238, 0) 65%);
+            animation: float 11s ease-in-out infinite reverse;
+        }
+
+        .blob-3 {
+            bottom: -5%;
+            right: -5%;
+            width: 50vw;
+            height: 50vw;
+            max-width: 600px;
+            max-height: 600px;
+            background: radial-gradient(circle at center, rgba(147, 51, 234, 0.35) 0%, rgba(147, 51, 234, 0) 65%);
+            animation: float 13s ease-in-out infinite;
+        }
+
+        /* Glassmorphism surface. */
+        .glass {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        /* Gradient text. */
+        .text-gradient {
+            background: linear-gradient(120deg, #8b7bff 0%, #4b2bee 40%, #22d3ee 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+        }
+
+        /* Clean transparent-PNG hero portrait effect. */
+        .portrait {
+            filter: drop-shadow(0 25px 45px rgba(75, 43, 238, 0.45));
+        }
+
+        .portrait-glow {
+            position: absolute;
+            inset: 0;
+            border-radius: 9999px;
+            background: radial-gradient(circle at 50% 45%, rgba(75, 43, 238, 0.55) 0%, rgba(34, 211, 238, 0.15) 45%, transparent 70%);
+            filter: blur(30px);
+            z-index: -1;
+        }
+
+        /* Scroll reveal. */
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            transition: opacity 0.7s ease, transform 0.7s ease;
+        }
+
+        .reveal.is-visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Nav active state. */
+        .nav-link.active {
+            color: #fff;
+            background: rgba(75, 43, 238, 0.25);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .blob,
+            .animate-float {
+                animation: none !important;
+            }
+
+            .reveal {
+                opacity: 1;
+                transform: none;
+                transition: none;
+            }
+
+            html {
+                scroll-behavior: auto;
+            }
         }
     </style>
 </head>
 
-<body class="bg-background-dark font-display text-gray-200">
-    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
-        <div class="glow-effect"></div>
-        <main class="relative z-10 flex flex-col items-center p-4 pt-12">
-            <!-- ProfileHeader Section -->
-            <div class="flex w-full max-w-lg flex-col items-center gap-4 text-center">
-                <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-28 w-28 border-2 border-primary/50 shadow-lg"
-                    data-alt="Profile picture of Nekominie"
-                    style='background-image: url("./src/index/modernherobrine.png");'>
-                </div>
-                <div class="flex flex-col items-center">
-                    <h1 class="text-white text-3xl font-bold leading-tight tracking-tight">Nekominie - CEO</h1>
-                    <p class="mt-2 max-w-md text-base font-normal leading-normal text-white/70">David A. Zepeda, creator
-                        and founder of NekomiSystems LTD brings to you the best tools for time wasting.</p>
-                </div>
-            </div>
-            <!-- Projects Section -->
-            <div class="mt-12 flex w-full max-w-lg flex-col gap-6">
-                <!-- Project Card 1 -->
-                <div class="relative w-full overflow-hidden rounded-xl shadow-2xl shadow-black/20">
-                    <div class="bg-cover bg-center" data-alt="background-img"
-                        style='background-image: url("./src/index/previews/mikurig_preview.png");'>
-                        <div class="flex flex-col items-stretch justify-end pt-56 backdrop-brightness-75">
-                            <div
-                                class="flex w-full items-center justify-between gap-4 p-4 backdrop-blur-lg bg-black/30 border-t border-white/10">
-                                <p class="text-white text-xl font-bold leading-tight flex-1">Hatsune Miku Rigging</p>
-                                <a href="/mikurig/"
-                                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors">
-                                    <span class="truncate">View</span>
-                        </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Project Card 2 -->
-                <div class="relative w-full overflow-hidden rounded-xl shadow-2xl shadow-black/20">
-                    <div class="bg-cover bg-center" data-alt="Abstract background image for Aura Wellness App"
-                        style='background-image: url("./src/index/previews/1 izq.jpg");'>
-                        <div class="flex flex-col items-stretch justify-end pt-56 backdrop-brightness-75">
-                            <div
-                                class="flex w-full items-center justify-between gap-4 p-4 backdrop-blur-lg bg-black/30 border-t border-white/10">
-                                <p class="text-white text-xl font-bold leading-tight flex-1">Katana Of Hell Manga Reader
-                                </p>
-                                <a href="/manga_reader/"
-                                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors">
-                                    <span class="truncate">Ver</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                                <!-- Project Card 2 -->
-                <div class="relative w-full overflow-hidden rounded-xl shadow-2xl shadow-black/20">
-                    <div class="bg-cover bg-center" data-alt="Abstract background image for Aura Wellness App"
-                        style='background-image: url("./bibootaxgame/src/characters/biboo.png");'>
-                        <div class="flex flex-col items-stretch justify-end pt-56 backdrop-brightness-75">
-                            <div
-                                class="flex w-full items-center justify-between gap-4 p-4 backdrop-blur-lg bg-black/30 border-t border-white/10">
-                                <p class="text-white text-xl font-bold leading-tight flex-1">Biboo Tax Game
-                                </p>
-                                <a href="/bibootaxgame/"
-                                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors">
-                                    <span class="truncate">Play</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+<body class="bg-background-dark font-display text-gray-200 antialiased">
+    <!-- Animated background -->
+    <div class="bg-decor">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <!-- ===================== NAVBAR ===================== -->
+    <header class="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4">
+        <nav class="glass flex w-full max-w-3xl items-center justify-between gap-2 rounded-full px-3 py-2 shadow-lg shadow-black/30">
+            <a href="#inicio" class="flex items-center gap-2 pl-2 pr-1 shrink-0">
+                <span class="material-symbols-outlined text-primary">terminal</span>
+                <span class="hidden text-sm font-bold text-white sm:block" data-brand>David Z.</span>
+            </a>
+            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar" data-nav-links></div>
+            <a href="#contacto"
+                class="ml-1 hidden shrink-0 items-center gap-1 rounded-full bg-primary/90 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-primary md:flex">
+                <span class="material-symbols-outlined text-[16px]">mail</span>
+                Contacto
+            </a>
+        </nav>
+    </header>
+
+    <main class="relative z-10">
+        <!-- ===================== HERO ===================== -->
+        <section id="inicio" class="mx-auto flex min-h-[92vh] max-w-6xl flex-col items-center justify-center gap-10 px-4 pt-28 pb-16 md:flex-row md:justify-between">
+            <div class="reveal flex max-w-xl flex-col items-center text-center md:items-start md:text-left">
+                <span class="glass mb-5 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-medium text-white/80">
+                    <span class="h-2 w-2 animate-pulse rounded-full bg-green-400"></span>
+                    <span data-availability>Disponible para nuevos proyectos</span>
+                </span>
+                <h1 class="text-4xl font-bold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
+                    <span>Hola, soy </span><span class="text-gradient" data-name>David A. Zepeda</span>
+                </h1>
+                <p class="mt-3 text-xl font-semibold text-white/90 sm:text-2xl" data-role>Desarrollador Fullstack</p>
+                <p class="mt-4 max-w-lg text-base leading-relaxed text-white/60" data-tagline></p>
+
+                <div class="mt-8 flex flex-wrap items-center justify-center gap-4 md:justify-start">
+                    <a data-portfolio-btn href="#"
+                        class="group relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-r from-primary to-accent px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/40 transition-transform hover:scale-[1.03]">
+                        <span class="absolute inset-0 -translate-x-full bg-white/20 transition-transform duration-500 group-hover:translate-x-full"></span>
+                        <span class="material-symbols-outlined text-[20px]">rocket_launch</span>
+                        <span>Ver Portafolio</span>
+                        <span class="material-symbols-outlined text-[18px] transition-transform group-hover:translate-x-1">arrow_forward</span>
+                    </a>
+                    <a data-resume-btn href="#"
+                        class="glass inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-white/90 transition-colors hover:bg-white/10">
+                        <span class="material-symbols-outlined text-[20px]">description</span>
+                        <span>Descargar CV</span>
+                    </a>
                 </div>
 
-                <!-- Project Card 3 -->
-                <div class="relative w-full overflow-hidden rounded-xl shadow-2xl shadow-black/20">
-                    <div class="bg-cover bg-center"
-                        data-alt="Abstract background image for Metropolis E-commerce Platform"
-                        style='background-image: url("/wallpapers/default-wallpaper.jpg");'>
-                        <div class="flex flex-col items-stretch justify-end pt-56 backdrop-brightness-75">
-                            <div
-                                class="flex w-full items-center justify-between gap-4 p-4 backdrop-blur-lg bg-black/30 border-t border-white/10">
-                                <p class="text-white text-xl font-bold leading-tight flex-1">Frost OS</p>
-                                <a href="/frost-os/"
-                                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors">
-                                    <span class="truncate">Start</span>
-                                </a>
-                            </div>
-                        </div>
+                <div class="mt-8 flex items-center gap-3" data-hero-social></div>
+            </div>
+
+            <div class="reveal relative flex shrink-0 items-center justify-center">
+                <div class="relative h-64 w-64 sm:h-80 sm:w-80 lg:h-96 lg:w-96">
+                    <div class="portrait-glow"></div>
+                    <img data-portrait alt="Retrato de David A. Zepeda"
+                        class="portrait animate-float h-full w-full object-contain" />
+                </div>
+            </div>
+        </section>
+
+        <!-- ===================== STATS ===================== -->
+        <section class="mx-auto max-w-5xl px-4 pb-20">
+            <div class="reveal glass grid grid-cols-2 gap-4 rounded-2xl p-6 sm:grid-cols-4" data-stats></div>
+        </section>
+
+        <!-- ===================== ABOUT ===================== -->
+        <section id="sobre-mi" class="mx-auto max-w-4xl px-4 py-16">
+            <div class="reveal">
+                <p class="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">Sobre mí</p>
+                <h2 class="text-3xl font-bold text-white sm:text-4xl" data-about-heading>Mi trayectoria</h2>
+                <div class="mt-6 space-y-4 text-lg leading-relaxed text-white/70" data-about-body></div>
+            </div>
+        </section>
+
+        <!-- ===================== TECHNOLOGIES ===================== -->
+        <section id="tecnologias" class="mx-auto max-w-6xl px-4 py-16">
+            <div class="reveal mb-10 text-center">
+                <p class="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">Stack</p>
+                <h2 class="text-3xl font-bold text-white sm:text-4xl">Tecnologías que utilizo</h2>
+                <p class="mx-auto mt-3 max-w-xl text-white/60">Herramientas y lenguajes con los que construyo productos de principio a fin.</p>
+            </div>
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3" data-tech-grid></div>
+        </section>
+
+        <!-- ===================== EXPERIENCE ===================== -->
+        <section id="experiencia" class="mx-auto max-w-4xl px-4 py-16">
+            <div class="reveal mb-10">
+                <p class="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">Carrera</p>
+                <h2 class="text-3xl font-bold text-white sm:text-4xl">Experiencia laboral</h2>
+            </div>
+            <div class="relative border-l border-white/10 pl-6 sm:pl-8" data-experience></div>
+        </section>
+
+        <!-- ===================== PROJECTS ===================== -->
+        <section id="proyectos" class="mx-auto max-w-5xl px-4 py-16">
+            <div class="reveal mb-10 text-center">
+                <p class="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">Proyectos</p>
+                <h2 class="text-3xl font-bold text-white sm:text-4xl">Algunos de mis trabajos</h2>
+            </div>
+            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2" data-projects></div>
+        </section>
+
+        <!-- ===================== CONTACT ===================== -->
+        <section id="contacto" class="mx-auto max-w-3xl px-4 py-20">
+            <div class="reveal glass rounded-2xl p-8 text-center sm:p-12">
+                <h2 class="text-3xl font-bold text-white sm:text-4xl">¿Trabajamos juntos?</h2>
+                <p class="mx-auto mt-3 max-w-lg text-white/60" data-contact-text></p>
+                <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
+                    <a data-contact-email href="#"
+                        class="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-primary to-accent px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/40 transition-transform hover:scale-[1.03]">
+                        <span class="material-symbols-outlined text-[20px]">mail</span>
+                        Envíame un correo
+                    </a>
+                </div>
+                <div class="mt-8 flex items-center justify-center gap-3" data-contact-social></div>
+            </div>
+            <p class="mt-10 text-center text-sm text-white/40">© <span data-year></span> David A. Zepeda · NekomiSystems. Todos los derechos reservados.</p>
+        </section>
+    </main>
+
+    <!-- ===================== CONFIG + RENDER ===================== -->
+    <script>
+        /* =====================================================================
+         *  CONFIGURACIÓN — Edita libremente todo desde este objeto.
+         * ===================================================================== */
+        const CONFIG = {
+            profile: {
+                name: "David A. Zepeda",
+                role: "Desarrollador Fullstack",
+                // Frase corta que aparece bajo tu rol en el hero.
+                tagline: "Construyo aplicaciones web modernas de extremo a extremo, del diseño de la interfaz a la arquitectura del backend.",
+                // Texto del badge de disponibilidad (déjalo vacío "" para ocultarlo).
+                availability: "Disponible para nuevos proyectos",
+                // ⚠️ Reemplaza por tu PNG con fondo transparente para el efecto limpio.
+                image: "./src/index/modernherobrine.png",
+                // Futura página de portafolio.
+                portfolioUrl: "#",
+                // Enlace a tu CV (PDF). Déjalo "#" si aún no lo tienes.
+                resumeUrl: "#",
+                email: "hola@nekomisystems.dev",
+            },
+
+            about: {
+                heading: "Mi trayectoria",
+                // Cada string es un párrafo.
+                paragraphs: [
+                    "Soy desarrollador fullstack apasionado por crear productos digitales que combinan un diseño cuidado con una ingeniería sólida. Disfruto llevar una idea desde el boceto hasta producción.",
+                    "A lo largo de mi carrera he trabajado en interfaces interactivas, APIs escalables y experiencias que ponen al usuario en el centro. Siempre busco aprender la siguiente herramienta que me permita construir mejor.",
+                ],
+            },
+
+            // Métricas destacadas del hero (edita, agrega o elimina).
+            stats: [
+                { value: "5+", label: "Años de experiencia" },
+                { value: "30+", label: "Proyectos completados" },
+                { value: "15+", label: "Tecnologías" },
+                { value: "100%", label: "Compromiso" },
+            ],
+
+            /* Tecnologías — agrega objetos con { icon, title, description }.
+             * `icon` puede ser:
+             *   - Una URL a una imagen/logo (png/svg), ideal con transparencia.
+             *   - El nombre de un ícono de Material Symbols (ej. "code", "database").
+             * Los logos de ejemplo vienen de Devicon (CDN público). */
+            technologies: [
+                { icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/vuejs/vuejs-original.svg", title: "Vue.js", description: "Interfaces reactivas y componentes reutilizables." },
+                { icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg", title: "JavaScript", description: "Base de mis desarrollos en el frontend y backend." },
+                { icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg", title: "TypeScript", description: "Código robusto y tipado para proyectos escalables." },
+                { icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg", title: "Node.js", description: "APIs y servicios backend rápidos y eficientes." },
+                { icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tailwindcss/tailwindcss-original.svg", title: "Tailwind CSS", description: "Diseño de UI moderno y consistente a gran velocidad." },
+                { icon: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg", title: "PostgreSQL", description: "Bases de datos relacionales confiables." },
+            ],
+
+            /* Experiencia laboral — orden de más reciente a más antigua. */
+            experience: [
+                {
+                    role: "Fundador & Desarrollador Fullstack",
+                    company: "NekomiSystems LTD",
+                    period: "2022 — Presente",
+                    description: "Diseño y desarrollo de herramientas y experiencias web interactivas, desde juegos hasta lectores de manga y sistemas operativos web.",
+                    tags: ["Vue", "Three.js", "Vite"],
+                },
+                {
+                    role: "Desarrollador Frontend",
+                    company: "Empresa Ejemplo",
+                    period: "2020 — 2022",
+                    description: "Implementación de interfaces de usuario responsivas y componentes reutilizables en colaboración con equipos de diseño y backend.",
+                    tags: ["JavaScript", "CSS", "REST"],
+                },
+            ],
+
+            /* Proyectos — enlazan a los submódulos del portafolio. */
+            projects: [
+                { title: "Hatsune Miku Rigging", image: "./src/index/previews/mikurig_preview.png", url: "/mikurig/", label: "Ver" },
+                { title: "Katana Of Hell — Manga Reader", image: "./src/index/previews/1 izq.jpg", url: "/manga_reader/", label: "Ver" },
+                { title: "Biboo Tax Game", image: "./bibootaxgame/src/characters/biboo.png", url: "/bibootaxgame/", label: "Jugar" },
+                { title: "Frost OS", image: "/wallpapers/default-wallpaper.jpg", url: "/frost-os/", label: "Iniciar" },
+            ],
+
+            /* Redes sociales — `icon` usa Material Symbols. */
+            social: [
+                { name: "GitHub", icon: "code", url: "https://github.com/nekominie" },
+                { name: "DeviantArt", icon: "design_services", url: "https://www.deviantart.com/modernherobrine" },
+                { name: "LinkedIn", icon: "group", url: "#" },
+            ],
+
+            contactText: "Estoy abierto a colaboraciones, trabajo freelance y nuevas oportunidades. ¡Hablemos!",
+        };
+
+        /* =====================================================================
+         *  RENDER — normalmente no necesitas tocar nada debajo de esta línea.
+         * ===================================================================== */
+        (function () {
+            const $ = (sel) => document.querySelector(sel);
+            const isImage = (icon) => /^(https?:|\.|\/)/.test(icon) || /\.(png|svg|jpg|jpeg|webp|gif)$/i.test(icon);
+
+            const sections = [
+                { id: "inicio", label: "Inicio" },
+                { id: "sobre-mi", label: "Sobre mí" },
+                { id: "tecnologias", label: "Tecnologías" },
+                { id: "experiencia", label: "Experiencia" },
+                { id: "proyectos", label: "Proyectos" },
+                { id: "contacto", label: "Contacto" },
+            ];
+
+            // ---- Profile / hero ----
+            const p = CONFIG.profile;
+            $("[data-name]").textContent = p.name;
+            $("[data-role]").textContent = p.role;
+            $("[data-tagline]").textContent = p.tagline;
+            const parts = p.name.trim().split(/\s+/);
+            $("[data-brand]").textContent = parts[0] + (parts[1] ? " " + parts[1][0] + "." : "");
+            const portrait = $("[data-portrait]");
+            portrait.src = p.image;
+            portrait.alt = "Retrato de " + p.name;
+            $("[data-portfolio-btn]").href = p.portfolioUrl || "#";
+            $("[data-resume-btn]").href = p.resumeUrl || "#";
+            const availEl = $("[data-availability]");
+            if (p.availability) { availEl.textContent = p.availability; }
+            else { availEl.closest("span.glass").style.display = "none"; }
+
+            // ---- About ----
+            $("[data-about-heading]").textContent = CONFIG.about.heading;
+            $("[data-about-body]").innerHTML = CONFIG.about.paragraphs.map((t) => `<p>${t}</p>`).join("");
+
+            // ---- Stats ----
+            $("[data-stats]").innerHTML = CONFIG.stats.map((s) => `
+                <div class="text-center">
+                    <p class="text-3xl font-bold text-gradient sm:text-4xl">${s.value}</p>
+                    <p class="mt-1 text-xs font-medium uppercase tracking-wide text-white/50">${s.label}</p>
+                </div>`).join("");
+
+            // ---- Technologies ----
+            $("[data-tech-grid]").innerHTML = CONFIG.technologies.map((t) => {
+                const iconMarkup = isImage(t.icon)
+                    ? `<img src="${t.icon}" alt="${t.title}" class="h-8 w-8 object-contain" loading="lazy" />`
+                    : `<span class="material-symbols-outlined text-primary text-3xl">${t.icon}</span>`;
+                return `
+                <div class="reveal glass group rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-white/[0.07]">
+                    <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/15 ring-1 ring-white/10 transition-colors group-hover:bg-primary/25">
+                        ${iconMarkup}
                     </div>
-                </div>
-            </div>
-            <!-- Footer / ActionsBar Section -->
-            <div class="mt-16 w-full max-w-lg">
-                <p class="text-center text-lg font-semibold text-white mb-4">Find me on</p>
-                <div class="grid grid-cols-3 gap-4">
-                    <a class="flex flex-col items-center gap-2 rounded-lg bg-white/5 py-4 text-center transition-colors hover:bg-white/10"
-                        href="https://github.com/nekominie">
-                        <div class="rounded-full bg-primary/20 p-3">
-                            <span class="material-symbols-outlined text-primary text-2xl">sports_basketball</span>
+                    <h3 class="text-lg font-bold text-white">${t.title}</h3>
+                    <p class="mt-2 text-sm leading-relaxed text-white/60">${t.description}</p>
+                </div>`;
+            }).join("");
+
+            // ---- Experience ----
+            $("[data-experience]").innerHTML = CONFIG.experience.map((e) => `
+                <div class="reveal relative mb-10 last:mb-0">
+                    <span class="absolute -left-[31px] top-1 flex h-4 w-4 items-center justify-center sm:-left-[39px]">
+                        <span class="h-3 w-3 rounded-full bg-primary ring-4 ring-primary/20"></span>
+                    </span>
+                    <div class="glass rounded-2xl p-6">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <h3 class="text-lg font-bold text-white">${e.role}</h3>
+                            <span class="rounded-full bg-white/5 px-3 py-1 text-xs font-medium text-white/60">${e.period}</span>
                         </div>
-                        <p class="text-white/80 text-sm font-medium leading-normal">GitHub</p>
-                    </a>
-                    <a class="flex flex-col items-center gap-2 rounded-lg bg-white/5 py-4 text-center transition-colors hover:bg-white/10"
-                        href="https://www.deviantart.com/modernherobrine">
-                        <div class="rounded-full bg-primary/20 p-3">
-                            <span class="material-symbols-outlined text-primary text-2xl">design_services</span>
-                        </div>
-                        <p class="text-white/80 text-sm font-medium leading-normal">DeviantArt</p>
-                    </a>
-                    <a class="flex flex-col items-center gap-2 rounded-lg bg-white/5 py-4 text-center transition-colors hover:bg-white/10"
-                        href="#">
-                        <div class="rounded-full bg-primary/20 p-3">
-                            <span class="material-symbols-outlined text-primary text-2xl">group</span>
-                        </div>
-                        <p class="text-white/80 text-sm font-medium leading-normal">LinkedIn</p>
-                    </a>
-                </div>
-                <p class="text-center text-sm text-white/50 mt-8">© 2024 NekomiWoks. All rights reserved.</p>
-            </div>
-        </main>
-    </div>
+                        <p class="mt-1 text-sm font-semibold text-accent">${e.company}</p>
+                        <p class="mt-3 text-sm leading-relaxed text-white/60">${e.description}</p>
+                        ${(e.tags && e.tags.length) ? `<div class="mt-4 flex flex-wrap gap-2">${e.tags.map((tag) => `<span class="rounded-full bg-primary/15 px-3 py-1 text-xs font-medium text-white/80">${tag}</span>`).join("")}</div>` : ""}
+                    </div>
+                </div>`).join("");
+
+            // ---- Projects ----
+            $("[data-projects]").innerHTML = CONFIG.projects.map((pr) => `
+                <div class="reveal group relative overflow-hidden rounded-2xl shadow-2xl shadow-black/30">
+                    <div class="h-56 bg-cover bg-center transition-transform duration-500 group-hover:scale-105" style="background-image:url('${pr.image}');"></div>
+                    <div class="absolute inset-x-0 bottom-0 flex items-center justify-between gap-4 border-t border-white/10 bg-black/40 p-4 backdrop-blur-lg">
+                        <p class="flex-1 text-lg font-bold text-white">${pr.title}</p>
+                        <a href="${pr.url}" class="flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-colors hover:bg-primary/90">
+                            <span class="truncate">${pr.label || "Ver"}</span>
+                        </a>
+                    </div>
+                </div>`).join("");
+
+            // ---- Social (hero + contact) ----
+            const socialPill = (s) => `
+                <a href="${s.url}" target="_blank" rel="noopener" aria-label="${s.name}"
+                    class="glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 transition-all hover:-translate-y-0.5 hover:text-white hover:bg-white/10">
+                    <span class="material-symbols-outlined text-[20px]">${s.icon}</span>
+                </a>`;
+            $("[data-hero-social]").innerHTML = CONFIG.social.map(socialPill).join("");
+            $("[data-contact-social]").innerHTML = CONFIG.social.map(socialPill).join("");
+
+            // ---- Contact ----
+            $("[data-contact-text]").textContent = CONFIG.contactText;
+            $("[data-contact-email]").href = "mailto:" + p.email;
+            $("[data-year]").textContent = new Date().getFullYear();
+
+            // ---- Navbar links ----
+            $("[data-nav-links]").innerHTML = sections.map((s) => `
+                <a href="#${s.id}" data-nav="${s.id}"
+                    class="nav-link shrink-0 rounded-full px-3 py-1.5 text-xs font-medium text-white/60 transition-colors hover:text-white">${s.label}</a>`).join("");
+
+            // ---- Scroll reveal ----
+            const revealObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add("is-visible");
+                        revealObserver.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.12 });
+            document.querySelectorAll(".reveal").forEach((el) => revealObserver.observe(el));
+
+            // ---- Active nav highlight ----
+            const navObserver = new IntersectionObserver((entries) => {
+                entries.forEach((entry) => {
+                    if (entry.isIntersecting) {
+                        document.querySelectorAll(".nav-link").forEach((l) => l.classList.remove("active"));
+                        const link = document.querySelector(`.nav-link[data-nav="${entry.target.id}"]`);
+                        if (link) link.classList.add("active");
+                    }
+                });
+            }, { threshold: 0.4 });
+            sections.forEach((s) => { const el = document.getElementById(s.id); if (el) navObserver.observe(el); });
+        })();
+    </script>
 </body>
 
 </html>
