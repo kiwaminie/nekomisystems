@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useSettingsStore } from "../../store";
 
 const settings = useSettingsStore();
@@ -10,9 +10,19 @@ const handleWallpaperChange = async (event: Event) => {
 
   try {
     await settings.updateWallpaper(file);
+    selectedWallpaper.value = "custom";
     console.log("Wallpaper actualizado con éxito");
   } catch (err) {
     console.error("Error al guardar el wallpaper:", err);
+  }
+};
+
+const restoreDefaultWallpaper = async () => {
+  try {
+    await settings.resetWallpaperToDefault();
+    selectedWallpaper.value = "default";
+  } catch (err) {
+    console.error("Error al restaurar el wallpaper predeterminado:", err);
   }
 };
 
@@ -27,7 +37,13 @@ type SettingsSection =
 
 const activeSection = ref<SettingsSection>("system");
 const searchQuery = ref("");
-const selectedWallpaper = ref("aurora");
+const selectedWallpaper = ref("default");
+
+onMounted(() => {
+  if (settings.isCustomWallpaper) {
+    selectedWallpaper.value = "custom";
+  }
+});
 
 const sections = [
   { id: "system", label: "Sistema", icon: "bi-display" },
@@ -153,41 +169,71 @@ const filteredSections = computed(() => {
 
       <section v-else-if="activeSection === 'personalization'" class="section-content">
         <div class="grid one">
-          <article class="setting-card glass-card" style="gap: 10px;">
-            
+          <article class="setting-card glass-card wallpaper-card">
             <h3><i class="bi bi-image"></i>Wallpaper</h3>
-            <p class="sub">Selecciona una imagen para el fondo del escritorio</p>
+            <p class="sub">Selecciona el fondo del escritorio</p>
 
-            <div v-if="settings.wallpaperUrl" class="preview">
-              <img :src="settings.wallpaperUrl" alt="Preview" />
+            <div class="wallpaper-preview-current" :style="{ backgroundImage: `url(${settings.wallpaperUrl})` }">
+              <span class="preview-label">Vista previa</span>
             </div>
 
-            <div class="wallpaper-grid" style="display: none;">
+            <div class="wallpaper-grid">
               <button
                 v-for="wall in wallpapers"
                 :key="wall.id"
                 class="wallpaper-item"
                 :class="[wall.className, { selected: selectedWallpaper === wall.id }]"
                 @click="selectedWallpaper = wall.id"
+                :title="wall.name"
               >
                 <span>{{ wall.name }}</span>
                 <i v-if="selectedWallpaper === wall.id" class="bi bi-check-circle-fill"></i>
               </button>
+
+              <button
+                class="wallpaper-item wallpaper-default"
+                :class="{ selected: selectedWallpaper === 'default' }"
+                @click="restoreDefaultWallpaper()"
+                title="Predeterminado del sistema"
+              >
+                <span>Predeterminado</span>
+                <i v-if="selectedWallpaper === 'default'" class="bi bi-check-circle-fill"></i>
+              </button>
+
+              <button
+                v-if="settings.isCustomWallpaper"
+                class="wallpaper-item wallpaper-custom"
+                :class="{ selected: selectedWallpaper === 'custom' }"
+                :style="{ backgroundImage: `url(${settings.wallpaperUrl})` }"
+                @click="selectedWallpaper = 'custom'"
+                title="Personalizado"
+              >
+                <span>Personalizado</span>
+                <i v-if="selectedWallpaper === 'custom'" class="bi bi-check-circle-fill"></i>
+              </button>
             </div>
 
-            <input 
-              style="display: none;"
-              id="wallpaper-upload"
-              type="file" 
-              accept="image/*" 
-              @change="handleWallpaperChange"
-            />
+            <div class="wallpaper-actions">
+              <input
+                id="wallpaper-upload"
+                type="file"
+                accept="image/*"
+                @change="handleWallpaperChange"
+              />
+              <label for="wallpaper-upload" class="wallpaper-upload-btn">
+                <i class="bi bi-upload"></i>
+                Subir imagen personalizada
+              </label>
 
-            <label for="wallpaper-upload" class="frst-file-input">
-                <i class="icon-upload"></i> <!-- O el icono que uses -->
-                Seleccionar imagen
-            </label>
-
+              <button
+                v-if="settings.isCustomWallpaper"
+                class="wallpaper-reset-btn"
+                @click="restoreDefaultWallpaper()"
+              >
+                <i class="bi bi-arrow-counterclockwise"></i>
+                Restaurar predeterminado
+              </button>
+            </div>
           </article>
 
           <article class="setting-card glass-card">
@@ -265,12 +311,84 @@ const filteredSections = computed(() => {
 </template>
 
 <style scoped>
-.preview img {
-  width: 200px;
-  height: auto;
-  border-radius: 8px;
-  margin-top: 10px;
-  border: 1px solid rgba(255,255,255,0.2);
+.wallpaper-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.wallpaper-preview-current {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.preview-label {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.wallpaper-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.wallpaper-actions input[type="file"] {
+  display: none;
+}
+
+.wallpaper-upload-btn,
+.wallpaper-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.wallpaper-upload-btn {
+  background: linear-gradient(140deg, rgba(91, 170, 255, 0.45), rgba(125, 109, 255, 0.45));
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.wallpaper-upload-btn:hover {
+  background: linear-gradient(140deg, rgba(91, 170, 255, 0.55), rgba(125, 109, 255, 0.55));
+}
+
+.wallpaper-reset-btn {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.wallpaper-reset-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.wallpaper-upload-btn:active,
+.wallpaper-reset-btn:active {
+  transform: translateY(1px);
 }
 
 .settings-shell {
@@ -518,8 +636,8 @@ const filteredSections = computed(() => {
 
 .wallpaper-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .wallpaper-item {
@@ -575,6 +693,18 @@ const filteredSections = computed(() => {
 
 .wall-clouds {
   background: linear-gradient(145deg, #5d79a3, #8ab0d2 48%, #d4e7f5);
+}
+
+.wallpaper-default {
+  background-image: url('/wallpapers/default-wallpaper.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+.wallpaper-custom {
+  background-size: cover;
+  background-position: center;
+  border-color: rgba(156, 214, 255, 0.5);
 }
 
 .theme-swatches {

@@ -1,9 +1,18 @@
 import { defineStore } from 'pinia';
-import { reactive, ref } from 'vue';
+import { ref } from 'vue';
 import { db } from '../../../../database/db'; // Tu archivo de Dexie
 
 export const useSettingsStore = defineStore('settings', () => {
-  const wallpaperUrl = ref<string | null>(null);
+  const DEFAULT_WALLPAPER_URL = '/wallpapers/default-wallpaper.jpg';
+
+  const wallpaperUrl = ref<string>(DEFAULT_WALLPAPER_URL);
+  const isCustomWallpaper = ref(false);
+
+  function revokeIfCustom(url: string) {
+    if (url && url !== DEFAULT_WALLPAPER_URL) {
+      URL.revokeObjectURL(url);
+    }
+  }
 
   // Cargar el wallpaper guardado al iniciar
   async function loadSettings() {
@@ -12,14 +21,22 @@ export const useSettingsStore = defineStore('settings', () => {
       // Si guardamos un ID de asset, buscamos el blob
       const asset = await db.assets.get(setting.value);
       if (asset) {
+        revokeIfCustom(wallpaperUrl.value);
         wallpaperUrl.value = URL.createObjectURL(asset.data);
+        isCustomWallpaper.value = true;
+        return;
       }
+      // El setting apunta a un asset que ya no existe; limpiar
+      await db.systemSettings.delete('ui.wallpaper');
     }
+    revokeIfCustom(wallpaperUrl.value);
+    wallpaperUrl.value = DEFAULT_WALLPAPER_URL;
+    isCustomWallpaper.value = false;
   }
 
   async function updateWallpaper(file: File) {
     const id = `wp-${Date.now()}`;
-    
+
     // 1. Guardar el archivo real (Blob) en la tabla de assets
     await db.assets.put({
       id: id,
@@ -33,9 +50,21 @@ export const useSettingsStore = defineStore('settings', () => {
 
     // 3. Actualizar la URL reactiva para la UI
     // Limpiamos la URL anterior para evitar fugas de memoria
-    if (wallpaperUrl.value) URL.revokeObjectURL(wallpaperUrl.value);
+    revokeIfCustom(wallpaperUrl.value);
     wallpaperUrl.value = URL.createObjectURL(file);
+    isCustomWallpaper.value = true;
   }
 
-  return { wallpaperUrl, updateWallpaper, loadSettings };
+  async function resetWallpaperToDefault() {
+    const setting = await db.systemSettings.get('ui.wallpaper');
+    if (setting) {
+      await db.assets.delete(setting.value);
+      await db.systemSettings.delete('ui.wallpaper');
+    }
+    revokeIfCustom(wallpaperUrl.value);
+    wallpaperUrl.value = DEFAULT_WALLPAPER_URL;
+    isCustomWallpaper.value = false;
+  }
+
+  return { wallpaperUrl, isCustomWallpaper, updateWallpaper, resetWallpaperToDefault, loadSettings };
 });
