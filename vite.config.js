@@ -24,5 +24,11 @@ export default defineConfig({
                 manga_reader: resolve(__dirname, 'manga_reader/index.html'),
             }
         }
+    },
+    preview: {
+		allowedHosts: true
+    },
+	server: {
+        allowedHosts: true
     }
 });
