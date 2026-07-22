@@ -20,6 +20,8 @@
     "src/**/*.tsx", 
     "src/**/*.vue",
     "frost-os/**/*.ts", /* Asegúrate de incluir tus subcarpetas */
-    "frost-os/**/*.vue"
+    "frost-os/**/*.vue",
+    "landing/**/*.ts",
+    "landing/**/*.vue"
   ]
 }

@@ -1,178 +1,250 @@
 <!DOCTYPE html>
-
-<html class="dark" lang="en">
-
+<html class="dark" lang="es">
 <head>
     <meta charset="utf-8" />
-    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>NekomiSystems: Portfolio</title>
-    <link href="https://fonts.googleapis.com" rel="preconnect" />
-    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
-    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;700&amp;display=swap"
-        rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nekomisystems</title>
+    <meta name="description" content="Nekomisystems — Software creado por pasión, no por dinero." />
+
+    <link rel="icon" href="./nekomisystems_logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Spline+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script id="tailwind-config">
+    <script>
         tailwind.config = {
-            darkMode: "class",
+            darkMode: 'class',
             theme: {
                 extend: {
-                    colors: {
-                        "primary": "#4b2bee",
-                        "background-light": "#f6f6f8",
-                        "background-dark": "#131022",
-                    },
-                    fontFamily: {
-                        "display": ["Spline Sans", "sans-serif"]
-                    },
-                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                    fontFamily: { display: ['Spline Sans', 'sans-serif'] },
+                    colors: { primary: '#4b2bee', accent: '#22d3ee' },
                 },
             },
         }
-
-        if (window.location.pathname.includes('/theos')) {
-            window.location.replace(window.location.href.replace('/theos', '/frost-os'));
-        }
     </script>
+
     <style>
-        .glow-effect {
-            position: absolute;
-            top: 5%;
-            left: 50%;
-            width: 80vw;
-            height: 80vw;
-            max-width: 600px;
-            max-height: 600px;
-            background-image: radial-gradient(circle at center, rgba(75, 43, 238, 0.25) 0%, rgba(75, 43, 238, 0) 60%);
-            transform: translateX(-50%);
-            pointer-events: none;
+        body { min-height: 100dvh; background: #0b0916; }
+
+        /* ── Background blobs ── */
+        .bg-decor { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+        .blob { position: absolute; border-radius: 9999px; filter: blur(100px); }
+
+        .blob-1 {
+            top: -20%; left: 50%; transform: translateX(-50%);
+            width: 80vw; height: 80vw; max-width: 900px; max-height: 900px;
+            background: radial-gradient(circle at center, rgba(75,43,238,0.5) 0%, transparent 65%);
+            animation: drift 11s ease-in-out infinite;
+        }
+        .blob-2 {
+            bottom: -15%; right: -10%;
+            width: 55vw; height: 55vw; max-width: 650px; max-height: 650px;
+            background: radial-gradient(circle at center, rgba(34,211,238,0.28) 0%, transparent 65%);
+            animation: drift 13s ease-in-out infinite reverse;
+        }
+        .blob-3 {
+            top: 40%; left: -8%;
+            width: 40vw; height: 40vw; max-width: 500px; max-height: 500px;
+            background: radial-gradient(circle at center, rgba(200,100,255,0.2) 0%, transparent 65%);
+            animation: drift 16s ease-in-out infinite;
+        }
+
+        @keyframes drift {
+            0%,100% { transform: translateX(-50%) translateY(0); }
+            50%      { transform: translateX(-50%) translateY(-18px); }
+        }
+        .blob-2, .blob-3 { animation-name: float-free; }
+        @keyframes float-free {
+            0%,100% { transform: translateY(0); }
+            50%      { transform: translateY(-18px); }
+        }
+
+        /* ── Glassmorphism ── */
+        .glass {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        /* ── Logo glow (layer behind the PNG) ── */
+        .logo-glow {
+            position: absolute; inset: -40px;
+            border-radius: 9999px;
+            background: radial-gradient(
+                ellipse at 60% 55%,
+                rgba(34,211,238,0.30) 0%,
+                rgba(75,43,238,0.25) 40%,
+                rgba(200,100,255,0.12) 65%,
+                transparent 80%
+            );
+            filter: blur(55px);
             z-index: 0;
         }
-    </style>
-    <style>
-        body {
-            min-height: max(884px, 100dvh);
+
+        /* Logo drop-shadow chains (cyan + pink) */
+        .logo-img {
+            position: relative; z-index: 1;
+            filter:
+                drop-shadow(0 0 18px rgba(34,211,238,0.45))
+                drop-shadow(0 0 45px rgba(200,120,255,0.20));
+            animation: logo-float 8s ease-in-out infinite;
+        }
+        @keyframes logo-float {
+            0%,100% { transform: translateY(0); }
+            50%      { transform: translateY(-14px); }
+        }
+
+        /* ── Gradient text ── */
+        .text-gradient {
+            background: linear-gradient(120deg, #8b7bff 0%, #4b2bee 40%, #22d3ee 100%);
+            -webkit-background-clip: text; background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ── Button shimmer ── */
+        .btn-shimmer {
+            position: absolute; inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+        a.btn-primary:hover .btn-shimmer { transform: translateX(100%); }
+
+        @media (prefers-reduced-motion: reduce) {
+            .blob, .logo-img { animation: none !important; }
         }
     </style>
 </head>
 
-<body class="bg-background-dark font-display text-gray-200">
-    <div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
-        <div class="glow-effect"></div>
-        <main class="relative z-10 flex flex-col items-center p-4 pt-12">
-            <!-- ProfileHeader Section -->
-            <div class="flex w-full max-w-lg flex-col items-center gap-4 text-center">
-                <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-28 w-28 border-2 border-primary/50 shadow-lg"
-                    data-alt="Profile picture of Nekominie"
-                    style='background-image: url("./src/index/modernherobrine.png");'>
-                </div>
-                <div class="flex flex-col items-center">
-                    <h1 class="text-white text-3xl font-bold leading-tight tracking-tight">Nekominie - CEO</h1>
-                    <p class="mt-2 max-w-md text-base font-normal leading-normal text-white/70">David A. Zepeda, creator
-                        and founder of NekomiSystems LTD brings to you the best tools for time wasting.</p>
-                </div>
-            </div>
-            <!-- Projects Section -->
-            <div class="mt-12 flex w-full max-w-lg flex-col gap-6">
-                <!-- Project Card 1 -->
-                <div class="relative w-full overflow-hidden rounded-xl shadow-2xl shadow-black/20">
-                    <div class="bg-cover bg-center" data-alt="background-img"
-                        style='background-image: url("./src/index/previews/mikurig_preview.png");'>
-                        <div class="flex flex-col items-stretch justify-end pt-56 backdrop-brightness-75">
-                            <div
-                                class="flex w-full items-center justify-between gap-4 p-4 backdrop-blur-lg bg-black/30 border-t border-white/10">
-                                <p class="text-white text-xl font-bold leading-tight flex-1">Hatsune Miku Rigging</p>
-                                <a href="/mikurig/"
-                                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors">
-                                    <span class="truncate">View</span>
-                        </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Project Card 2 -->
-                <div class="relative w-full overflow-hidden rounded-xl shadow-2xl shadow-black/20">
-                    <div class="bg-cover bg-center" data-alt="Abstract background image for Aura Wellness App"
-                        style='background-image: url("./src/index/previews/1 izq.jpg");'>
-                        <div class="flex flex-col items-stretch justify-end pt-56 backdrop-brightness-75">
-                            <div
-                                class="flex w-full items-center justify-between gap-4 p-4 backdrop-blur-lg bg-black/30 border-t border-white/10">
-                                <p class="text-white text-xl font-bold leading-tight flex-1">Katana Of Hell Manga Reader
-                                </p>
-                                <a href="/manga_reader/"
-                                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors">
-                                    <span class="truncate">Ver</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                                <!-- Project Card 2 -->
-                <div class="relative w-full overflow-hidden rounded-xl shadow-2xl shadow-black/20">
-                    <div class="bg-cover bg-center" data-alt="Abstract background image for Aura Wellness App"
-                        style='background-image: url("./bibootaxgame/src/characters/biboo.png");'>
-                        <div class="flex flex-col items-stretch justify-end pt-56 backdrop-brightness-75">
-                            <div
-                                class="flex w-full items-center justify-between gap-4 p-4 backdrop-blur-lg bg-black/30 border-t border-white/10">
-                                <p class="text-white text-xl font-bold leading-tight flex-1">Biboo Tax Game
-                                </p>
-                                <a href="/bibootaxgame/"
-                                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors">
-                                    <span class="truncate">Play</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<body class="font-display text-gray-200 antialiased">
 
-                <!-- Project Card 3 -->
-                <div class="relative w-full overflow-hidden rounded-xl shadow-2xl shadow-black/20">
-                    <div class="bg-cover bg-center"
-                        data-alt="Abstract background image for Metropolis E-commerce Platform"
-                        style='background-image: url("/wallpapers/default-wallpaper.jpg");'>
-                        <div class="flex flex-col items-stretch justify-end pt-56 backdrop-brightness-75">
-                            <div
-                                class="flex w-full items-center justify-between gap-4 p-4 backdrop-blur-lg bg-black/30 border-t border-white/10">
-                                <p class="text-white text-xl font-bold leading-tight flex-1">Frost OS</p>
-                                <a href="/frost-os/"
-                                    class="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-wide shadow-lg shadow-primary/30 hover:bg-primary/90 transition-colors">
-                                    <span class="truncate">Start</span>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Footer / ActionsBar Section -->
-            <div class="mt-16 w-full max-w-lg">
-                <p class="text-center text-lg font-semibold text-white mb-4">Find me on</p>
-                <div class="grid grid-cols-3 gap-4">
-                    <a class="flex flex-col items-center gap-2 rounded-lg bg-white/5 py-4 text-center transition-colors hover:bg-white/10"
-                        href="https://github.com/nekominie">
-                        <div class="rounded-full bg-primary/20 p-3">
-                            <span class="material-symbols-outlined text-primary text-2xl">sports_basketball</span>
-                        </div>
-                        <p class="text-white/80 text-sm font-medium leading-normal">GitHub</p>
-                    </a>
-                    <a class="flex flex-col items-center gap-2 rounded-lg bg-white/5 py-4 text-center transition-colors hover:bg-white/10"
-                        href="https://www.deviantart.com/modernherobrine">
-                        <div class="rounded-full bg-primary/20 p-3">
-                            <span class="material-symbols-outlined text-primary text-2xl">design_services</span>
-                        </div>
-                        <p class="text-white/80 text-sm font-medium leading-normal">DeviantArt</p>
-                    </a>
-                    <a class="flex flex-col items-center gap-2 rounded-lg bg-white/5 py-4 text-center transition-colors hover:bg-white/10"
-                        href="#">
-                        <div class="rounded-full bg-primary/20 p-3">
-                            <span class="material-symbols-outlined text-primary text-2xl">group</span>
-                        </div>
-                        <p class="text-white/80 text-sm font-medium leading-normal">LinkedIn</p>
-                    </a>
-                </div>
-                <p class="text-center text-sm text-white/50 mt-8">© 2024 NekomiWoks. All rights reserved.</p>
-            </div>
-        </main>
+    <!-- Animated background -->
+    <div class="bg-decor">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
     </div>
-</body>
 
+    <!-- Main content -->
+    <main class="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
+
+        <!-- Logo -->
+        <div class="relative mb-6 flex items-center justify-center">
+            <div class="logo-glow"></div>
+            <img data-logo src="./nekomisystems_logo.png" alt="Nekomisystems"
+                class="logo-img w-[85vw] max-w-[560px] sm:max-w-[640px] lg:max-w-[720px]" />
+        </div>
+
+        <!-- Eyebrow badge -->
+        <span data-eyebrow
+            class="mb-5 inline-block rounded-full border border-white/10 bg-white/5 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-white/50"></span>
+
+        <!-- Tagline -->
+        <p data-tagline class="mb-10 max-w-xs text-base leading-relaxed text-white/55 sm:max-w-sm"></p>
+
+        <!-- CTA buttons (rendered by JS) -->
+        <div data-buttons class="flex flex-wrap items-center justify-center gap-4 mb-16"></div>
+
+        <!-- Info strip -->
+        <div class="glass rounded-2xl px-8 py-3">
+            <p data-strip class="text-[11px] uppercase tracking-[0.22em] text-white/30"></p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-10 pb-8 text-center">
+        <p data-footer class="text-xs text-white/20"></p>
+    </footer>
+
+    <!-- ====================================================
+         CONFIG — edita libremente todo desde este objeto.
+         ==================================================== -->
+    <script>
+        const CONFIG = {
+            company: 'Nekomisystems',
+
+            /** Ruta al logo (PNG con transparencia recomendado). */
+            logo: './nekomisystems_logo.png',
+
+            /** Badge pequeño sobre el tagline. Déjalo '' para ocultarlo. */
+            eyebrow: 'Est. 2022',
+
+            /** Frase corta bajo el logo. */
+            tagline: 'Software creado por pasión, no por dinero.',
+
+            /** Texto del strip de información inferior. */
+            strip: 'Software · Creatividad · Diversión',
+
+            /**
+             * Botones principales.
+             * style: 'primary'  → degradado con shimmer
+             * style: 'glass'    → vidrio semi-transparente
+             */
+            buttons: [
+                {
+                    label: 'Proyectos',
+                    icon: 'folder_open',
+                    url: '#',          // ← URL de tu futura página de proyectos
+                    style: 'primary',
+                },
+                {
+                    label: 'Fundador',
+                    icon: 'person',
+                    url: '/landing/',  // ← Landing personal del fundador
+                    style: 'glass',
+                },
+            ],
+        }
+
+        /* ====================================================
+           RENDER — normalmente no necesitas tocar esto.
+           ==================================================== */
+        ;(function () {
+            const $ = sel => document.querySelector('[data-' + sel + ']')
+
+            // Logo
+            const logoEl = $('logo')
+            logoEl.src = CONFIG.logo
+            logoEl.alt = CONFIG.company
+
+            // Eyebrow
+            const eyebrowEl = $('eyebrow')
+            if (CONFIG.eyebrow) {
+                eyebrowEl.textContent = CONFIG.eyebrow
+            } else {
+                eyebrowEl.style.display = 'none'
+            }
+
+            // Tagline
+            $('tagline').textContent = CONFIG.tagline
+
+            // Strip
+            $('strip').textContent = CONFIG.strip
+
+            // Buttons
+            $('buttons').innerHTML = CONFIG.buttons.map(btn => {
+                if (btn.style === 'primary') {
+                    return `
+                    <a href="${btn.url}" class="btn-primary group relative inline-flex items-center gap-2.5 overflow-hidden rounded-full bg-gradient-to-r from-[#4b2bee] to-[#22d3ee] px-8 py-3.5 text-sm font-bold text-white shadow-lg shadow-black/40 transition-transform hover:scale-[1.04] hover:shadow-[0_0_35px_rgba(75,43,238,0.55)]">
+                        <span class="btn-shimmer"></span>
+                        <span class="material-symbols-outlined text-[20px] relative">${btn.icon}</span>
+                        <span class="relative">${btn.label}</span>
+                    </a>`
+                } else {
+                    return `
+                    <a href="${btn.url}" class="inline-flex items-center gap-2.5 rounded-full glass px-8 py-3.5 text-sm font-bold text-white/75 transition-all hover:scale-[1.03] hover:text-white hover:bg-white/10">
+                        <span class="material-symbols-outlined text-[20px]">${btn.icon}</span>
+                        <span>${btn.label}</span>
+                    </a>`
+                }
+            }).join('')
+
+            // Footer
+            $('footer').textContent = `© ${new Date().getFullYear()} ${CONFIG.company}. Todos los derechos reservados.`
+        })()
+    </script>
+</body>
 </html>
