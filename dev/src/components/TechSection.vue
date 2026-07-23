@@ -24,17 +24,23 @@ const isImage = (icon: string) =>
       <div
         v-for="tech in technologies"
         :key="tech.title"
-        class="reveal glass group rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-white/[0.07]"
+        class="reveal glass group rounded-2xl p-4 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-white/[0.07]"
       >
         <div class="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-primary/15 ring-1 ring-white/10 transition-colors group-hover:bg-primary/25">
           <img
             v-if="isImage(tech.icon)"
             :src="tech.icon"
             :alt="tech.title"
-            class="h-8 w-8 object-contain"
+            class="h-10 w-10 object-contain"
             loading="lazy"
           />
-          <span v-else class="material-symbols-outlined text-3xl text-primary">{{ tech.icon }}</span>
+          <i
+            v-else
+            :class="tech.class"
+            class="material-symbols-outlined text-3xl text-primary text-white"
+            style="font-size: 35px;"
+          ></i>
+          <!--<span v-else class="material-symbols-outlined text-3xl text-primary">{{ tech.icon }}</span>-->
         </div>
         <h3 class="text-lg font-bold text-white">{{ tech.title }}</h3>
         <p class="mt-2 text-sm leading-relaxed text-white/60">{{ tech.description }}</p>

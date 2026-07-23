@@ -15,7 +15,7 @@ const sections = [
   { id: 'tecnologias', label: 'Tecnologías' },
   { id: 'experiencia', label: 'Experiencia' },
   { id: 'proyectos',  label: 'Proyectos' },
-  { id: 'contacto',   label: 'Contacto' },
+  //{ id: 'contacto',   label: 'Contacto' },
 ]
 
 const activeSectionId = ref('inicio')

@@ -6,7 +6,7 @@ const { projects } = CONFIG
 <template>
   <section id="proyectos" class="mx-auto max-w-5xl px-4 py-16">
     <div class="reveal mb-10 text-center">
-      <p class="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">Proyectos</p>
+      <p class="mb-2 text-sm font-semibold uppercase tracking-widest text-accent">Proyectos personales y de ocio</p>
       <h2 class="text-3xl font-bold text-white sm:text-4xl">Algunos de mis trabajos</h2>
     </div>
 

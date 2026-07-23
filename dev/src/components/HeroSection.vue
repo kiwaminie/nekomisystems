@@ -59,19 +59,21 @@ const { profile, social } = CONFIG
           rel="noopener"
           class="glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 transition-all hover:-translate-y-0.5 hover:bg-white/10 hover:text-white"
         >
-          <span class="material-symbols-outlined text-[20px]">{{ s.icon }}</span>
+          <!--<span class="material-symbols-outlined text-[20px]">{{ s.icon }}</span>-->
+          <i :class="s.icon" class="material-symbols-outlined text-[20px]"></i>
         </a>
       </div>
     </div>
 
     <!-- ── Portrait side ── -->
     <div class="reveal relative flex shrink-0 items-center justify-center">
-      <div class="relative h-64 w-64 sm:h-80 sm:w-80 lg:h-96 lg:w-96">
+      <div class="relative h-64 w-64 sm:h-80 sm:w-80 lg:h-96 lg:w-96" style="width: 32rem;">
         <div class="portrait-glow" />
         <img
           :src="profile.image"
           :alt="'Retrato de ' + profile.name"
           class="portrait animate-float h-full w-full object-contain"
+          style="height: 37rem; margin-top: -6rem;"
         />
       </div>
     </div>

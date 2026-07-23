@@ -31,13 +31,14 @@ const year = new Date().getFullYear()
           rel="noopener"
           class="glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 transition-all hover:-translate-y-0.5 hover:bg-white/10 hover:text-white"
         >
-          <span class="material-symbols-outlined text-[20px]">{{ s.icon }}</span>
+          <!--<span class="material-symbols-outlined text-[20px]">{{ s.icon }}</span>-->
+          <i :class="s.icon" class="material-symbols-outlined text-[20px]"></i>
         </a>
       </div>
     </div>
 
     <p class="mt-10 text-center text-sm text-white/40">
-      © {{ year }} David A. Zepeda · NekomiSystems. Todos los derechos reservados.
+      © {{ year }} David A. Zepeda · NekomiSystems es propiedad de NekomiWorks. Todos los derechos reservados.
     </p>
   </section>
 </template>
