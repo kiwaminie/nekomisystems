@@ -22,6 +22,10 @@
     "frost-os/**/*.ts", /* Asegúrate de incluir tus subcarpetas */
     "frost-os/**/*.vue",
     "landing/**/*.ts",
-    "landing/**/*.vue"
+    "landing/**/*.vue",
+    "dev/**/*.ts",
+    "dev/**/*.vue",
+    "portfolio/**/*.ts",
+    "portfolio/**/*.vue"
   ]
 }
