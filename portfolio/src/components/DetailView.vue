@@ -135,7 +135,8 @@ onMounted(() => {
                 class="h-5 w-5 object-contain"
                 loading="lazy"
               />
-              <span v-else class="material-symbols-outlined text-[18px] text-accent">{{ tech.icon }}</span>
+              <!--<span v-else class="material-symbols-outlined text-[18px] text-accent">{{ tech.icon }}</span>-->
+              <i v-else :class="tech.class" class="material-symbols-outlined text-[18px] text-accent">{{ tech.icon }}</i>
               <span class="text-sm font-medium text-white/80">{{ tech.name }}</span>
             </div>
           </div>

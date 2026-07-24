@@ -8,17 +8,18 @@ const props = defineProps<{
 }>()
 
 /** "David A." → "David A." */
-const brandName = computed(() => {
+/*const brandName = computed(() => {
   const parts = CONFIG.profile.name.trim().split(/\s+/)
   return parts[0] + (parts[1] ? ' ' + parts[1][0] + '.' : '')
-})
+})*/
+const brandName = "NekomiSystems"
 </script>
 
 <template>
   <header class="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4">
     <nav class="glass flex w-full max-w-3xl items-center justify-between gap-2 rounded-full px-3 py-2 shadow-lg shadow-black/30">
       <!-- Brand -->
-      <a href="#inicio" class="flex shrink-0 items-center gap-2 pl-2 pr-1">
+      <a href="https://nekomisystems.com" class="flex shrink-0 items-center gap-2 pl-2 pr-1">
         <span class="material-symbols-outlined text-primary">terminal</span>
         <span class="hidden text-sm font-bold text-white sm:block">{{ brandName }}</span>
       </a>
