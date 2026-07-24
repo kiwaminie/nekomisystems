@@ -48,7 +48,7 @@ import profileImage from './images/chibi.png'
 import mikurigPreview from '@/index/previews/mikurig_preview.png'
 import mangaPreview from '@/index/previews/1 izq.jpg'
 import bibooPreview from '../../bibootaxgame/src/characters/biboo.png'
-import nekoDrivePreview from './images/nekodrive-bg.png'
+import nekoDrivePreview from '/wallpapers/nekodrive-bg.png'
 // Frost OS usa imagen de /public — se referencia como URL estática.
 const frostOsPreview = '/wallpapers/default-wallpaper.jpg'
 
