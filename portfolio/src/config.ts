@@ -83,7 +83,7 @@ export const PROJECTS: Project[] = [
       { name: 'WebGL',       icon: 'texture' },
     ],
     cta: { label: 'Ver', icon: 'open_in_new', url: '/mikurig/' },
-    status: 'live',
+    status: 'wip',
   },
   {
     id: 'manga-reader',
@@ -117,7 +117,7 @@ export const PROJECTS: Project[] = [
       { name: 'CSS3',        icon: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/css3/css3-original.svg' },
     ],
     cta: { label: 'Jugar', icon: 'sports_esports', url: '/bibootaxgame/' },
-    status: 'live',
+    status: 'wip',
   },
   {
     id: 'nekodrive',
@@ -146,7 +146,7 @@ export const PROJECTS: Project[] = [
 export const CONFIG = {
   /** Company/brand name shown in the navbar — links to homeUrl */
   brand:   'NekomiSystems',
-  homeUrl: '/',
+  homeUrl: 'https://nekomisystems.com',
 
   title:    'Portafolio',
   subtitle: 'Proyectos y experimentos creados por pasión.',
