@@ -26,7 +26,8 @@
     </script>
 
     <style>
-        body { min-height: 100dvh; background: #0b0916; }
+        html, body { height: 100dvh; overflow: hidden; margin: 0; }
+        body { display: flex; flex-direction: column; background: #0b0916; }
 
         /* ── Background blobs ── */
         .bg-decor { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
@@ -71,7 +72,7 @@
 
         /* ── Logo glow (layer behind the PNG) ── */
         .logo-glow {
-            position: absolute; inset: -40px;
+            position: absolute; inset: -20px;
             border-radius: 9999px;
             background: radial-gradient(
                 ellipse at 60% 55%,
@@ -119,7 +120,7 @@
     </style>
 </head>
 
-<body class="font-display text-gray-200 antialiased">
+<body class="font-display text-gray-200 antialiased flex flex-col h-dvh overflow-hidden">
 
     <!-- Animated background -->
     <div class="bg-decor">
@@ -129,24 +130,24 @@
     </div>
 
     <!-- Main content -->
-    <main class="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
+    <main class="relative z-10 flex flex-1 min-h-0 flex-col items-center justify-center px-6 text-center">
 
         <!-- Logo -->
-        <div class="relative mb-6 flex items-center justify-center">
+        <div class="relative mb-4 flex items-center justify-center">
             <div class="logo-glow"></div>
             <img data-logo src="/logos/nekomisystems_logo.png" alt="Nekomisystems"
-                class="logo-img w-[85vw] max-w-[560px] sm:max-w-[640px] lg:max-w-[720px]" />
+                class="logo-img w-[85vw] max-w-[560px] max-h-[30vh] sm:max-w-[640px] sm:max-h-[40vh] lg:max-w-[720px] lg:max-h-[45vh]" />
         </div>
 
         <!-- Eyebrow badge -->
         <span data-eyebrow
-            class="mb-5 inline-block rounded-full border border-white/10 bg-white/5 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-white/50"></span>
+            class="mb-3 inline-block rounded-full border border-white/10 bg-white/5 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.25em] text-white/50"></span>
 
         <!-- Tagline -->
-        <p data-tagline class="mb-10 max-w-xs text-base leading-relaxed text-white/55 sm:max-w-sm"></p>
+        <p data-tagline class="mb-6 max-w-xs text-base leading-relaxed text-white/55 sm:max-w-sm"></p>
 
         <!-- CTA buttons (rendered by JS) -->
-        <div data-buttons class="flex flex-wrap items-center justify-center gap-4 mb-16"></div>
+        <div data-buttons class="flex flex-wrap items-center justify-center gap-4 mb-10"></div>
 
         <!-- Info strip -->
         <div class="glass rounded-2xl px-8 py-3">
@@ -155,7 +156,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="relative z-10 pb-8 text-center">
+    <footer class="relative z-10 pb-4 text-center">
         <p data-footer class="text-xs text-white/20"></p>
     </footer>
 

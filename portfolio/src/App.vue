@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { PROJECTS } from './config'
 import type { Project } from './config'
 import NavBar from './components/NavBar.vue'
@@ -8,15 +8,32 @@ import DetailView from './components/DetailView.vue'
 
 const selected = ref<Project | null>(null)
 
+const readHash = () => {
+  const hash = window.location.hash.slice(1)
+  if (!hash) {
+    selected.value = null
+    return
+  }
+  const project = PROJECTS.find(p => p.id === hash)
+  selected.value = project || null
+}
+
 const onSelect = (project: Project) => {
-  selected.value = project
-  nextTick(() => window.scrollTo({ top: 0, behavior: 'instant' }))
+  window.location.hash = project.id
 }
 
 const onBack = () => {
-  selected.value = null
-  nextTick(() => window.scrollTo({ top: 0, behavior: 'instant' }))
+  window.location.hash = ''
 }
+
+onMounted(() => {
+  readHash()
+  window.addEventListener('hashchange', readHash)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('hashchange', readHash)
+})
 </script>
 
 <template>

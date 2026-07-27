@@ -18,7 +18,16 @@ defineEmits<{ back: [] }>()
 
       <!-- Breadcrumb separator -->
       <span class="text-white/25 select-none">/</span>
-      <span class="text-sm font-medium text-white/55">{{ CONFIG.title }}</span>
+
+      <!-- Portafolio — clickable when in detail view to return to catalog -->
+      <button
+        v-if="selected"
+        class="text-sm font-medium text-white/55 transition-colors hover:text-white"
+        @click="$emit('back')"
+      >
+        {{ CONFIG.title }}
+      </button>
+      <span v-else class="text-sm font-medium text-white/55">{{ CONFIG.title }}</span>
 
       <!-- Title + spacer + Volver — only visible in detail mode -->
       <Transition name="view">
