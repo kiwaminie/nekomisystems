@@ -37,6 +37,23 @@ export interface StatItem {
   label: string
 }
 
+export interface ResumeLanguage {
+  label: string
+  /** URL to open/view the CV (Google Drive, OneDrive, direct PDF, etc.) */
+  viewUrl: string
+  viewLabel: string
+  /** Optional direct download URL. Falls back to viewUrl if not set. */
+  downloadUrl?: string
+  downloadLabel: string
+}
+
+export interface ResumeConfig {
+  title: string
+  subtitle: string
+  es: ResumeLanguage
+  en: ResumeLanguage
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 //  IMÁGENES  (importadas como módulos para que Vite las procese correctamente)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,8 +84,25 @@ export const CONFIG = {
     image: profileImage,
     /** URL de tu futura página de portafolio. */
     portfolioUrl: 'https://portfolio.nekomisystems.com',
-    /** Enlace a tu CV en PDF. Déjalo "#" si aún no lo tienes. */
-    resumeUrl: '#',
+    /** CVs por idioma. viewUrl abre el visor; downloadUrl fuerza la descarga. */
+    resume: {
+      title: 'Descargar CV',
+      subtitle: 'Elige el idioma y la acción que prefieras',
+      es: {
+        label: 'Español',
+        viewUrl: '#',      // <- Reemplaza con la URL de tu CV en español
+        viewLabel: 'Ver',
+        downloadUrl: '#',  // <- URL directa de descarga (opcional)
+        downloadLabel: 'Descargar',
+      },
+      en: {
+        label: 'English',
+        viewUrl: '#',      // <- Reemplaza con la URL de tu CV en inglés
+        viewLabel: 'View',
+        downloadUrl: '#',  // <- URL directa de descarga (opcional)
+        downloadLabel: 'Download',
+      },
+    } satisfies ResumeConfig,
     email: 'davidzep77@hotmail.com',
   },
 

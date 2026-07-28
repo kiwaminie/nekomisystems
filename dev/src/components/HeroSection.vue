@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { CONFIG } from '../config'
+import CvModal from './CvModal.vue'
 
 const { profile, social } = CONFIG
+
+const showCvModal = ref(false)
 </script>
 
 <template>
@@ -39,14 +43,20 @@ const { profile, social } = CONFIG
           <span class="material-symbols-outlined text-[18px] transition-transform group-hover:translate-x-1">arrow_forward</span>
         </a>
 
-        <a
-          :href="profile.resumeUrl || '#'"
+        <button
           class="glass inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-semibold text-white/90 transition-colors hover:bg-white/10"
+          @click="showCvModal = true"
         >
           <span class="material-symbols-outlined text-[20px]">description</span>
           Descargar CV
-        </a>
+        </button>
       </div>
+
+      <Teleport to="body">
+        <Transition name="modal">
+          <CvModal v-if="showCvModal" :resume="profile.resume" @close="showCvModal = false" />
+        </Transition>
+      </Teleport>
 
       <!-- Social pills -->
       <div class="mt-8 flex items-center gap-3">
