@@ -218,11 +218,11 @@ export const CONFIG = {
 
   /** Proyectos — enlazan a los submódulos del portafolio. */
   projects: [
-    { title: 'Hatsune Miku Rigging', image: mikurigPreview, url: '/mikurig/', label: 'Ver' },
-    { title: "Hell's Katana — Manga Reader", image: mangaPreview, url: '/manga_reader/', label: 'Ver' },
-    { title: 'Biboo Tax Game', image: bibooPreview, url: '/bibootaxgame/', label: 'Jugar' },
-    { title: 'Frost OS', image: frostOsPreview, url: '/frost-os/', label: 'Iniciar' },
-    { title: 'NekoDrive (Nube Personal)', image: nekoDrivePreview, url: 'https://drive.nekomisystems.com', label: 'Ir' },
+    { title: 'Hatsune Miku Rigging', image: mikurigPreview, url: 'https://portfolio.nekomisystems.com/#mikurig', label: 'Ver' },
+    { title: "Hell's Katana — Manga Reader", image: mangaPreview, url: 'https://portfolio.nekomisystems.com/#manga-reader', label: 'Ver' },
+    { title: 'Biboo Tax Game', image: bibooPreview, url: 'https://portfolio.nekomisystems.com/#biboo-tax', label: 'Ver' },
+    { title: 'Frost OS', image: frostOsPreview, url: 'https://portfolio.nekomisystems.com/#frost-os', label: 'Ver' },
+    { title: 'NekoDrive (Nube Personal)', image: nekoDrivePreview, url: 'https://portfolio.nekomisystems.com/#nekodrive', label: 'Ver' },
   ] satisfies ProjectItem[],
 
   /** Redes sociales — `icon` usa nombres de Material Symbols. */
