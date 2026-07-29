@@ -25,6 +25,7 @@
     "ammo.js": "^0.0.10",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
+    "cannon-es": "^0.20.0",
     "dexie": "^4.3.0",
     "html2canvas": "^1.4.1",
     "pinia": "^3.0.4",

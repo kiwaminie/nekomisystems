@@ -1,5 +1,8 @@
-import { InitializeRender } from "./render.js";
-import { InitializePhysics} from "./render.js";
+import { InitializeRender, resetModel } from './render.js';
 
-InitializeRender();
-InitializePhysics();
+InitializeRender().catch((error) => {
+  console.error('Error al iniciar Mikurig:', error);
+});
+
+// Exponer el reset para que el botón HTML pueda llamarlo
+window.resetMikurig = () => resetModel();

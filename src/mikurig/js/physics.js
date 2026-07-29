@@ -1,69 +1,98 @@
-import Ammo from 'ammo.js';
+import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
+import { state, setPhysicsWorld } from './state.js';
 
-let AmmoLib;
+/** Inicializa el mundo de Cannon.js. */
+export function initPhysicsWorld() {
+  if (state.physicsWorld) return state.physicsWorld;
 
-export async function initPhysicsWorld(){
+  const world = new CANNON.World();
+  world.gravity.set(0, -9.82, 0);
+  world.broadphase = new CANNON.NaiveBroadphase();
+  world.solver.iterations = 20;
+  world.solver.tolerance = 0.001;
 
-    if (!AmmoLib) {
-        AmmoLib = await Ammo();  // espera la promesa y guarda la instancia
-    }
-
-    const collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
-    const dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
-    const broadphase = new Ammo.btDbvtBroadphase();
-    const solver = new Ammo.btSequentialImpulseConstraintSolver();
-
-    const physicsWorld = new Ammo.btDiscreteDynamicsWorld(
-        dispatcher,
-        broadphase,
-        solver,
-        collisionConfiguration
-    );
-    physicsWorld.setGravity(new Ammo.btVector3(0, -9.8, 0));
-
-    return physicsWorld;
+  setPhysicsWorld(world);
+  return world;
 }
 
 /**
- * Crea un cuerpo rígido para un objeto
- * @param {THREE.Vector3} position Posición inicial
- * @param {Ammo.btCollisionShape} shape La forma física (colisionador)
- * @param {number} mass Masa del cuerpo
- * @returns {Ammo.btRigidBody} El cuerpo rígido creado
+ * Crea un cuerpo rígido y lo añade al mundo.
+ * @param {THREE.Vector3} position
+ * @param {CANNON.Shape} shape
+ * @param {number} mass 0 = estático
+ * @param {THREE.Quaternion} [rotation]
+ * @returns {CANNON.Body}
  */
+export function createRigidBody(position, shape, mass, rotation) {
+  if (!state.physicsWorld) throw new Error('El mundo físico no está inicializado');
 
-export function createRigidBodyForBone(position, shape, mass){
-    const transform = new Ammo.btTransform();
-    transform.setIdentity();
-    transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+  const body = new CANNON.Body({
+    mass,
+    position: new CANNON.Vec3(position.x, position.y, position.z),
+    shape,
+    material: new CANNON.Material({ friction: 0.3, restitution: 0.1 }),
+  });
 
-    const motionState = new Ammo.btDefaultMotionState(transform);
+  if (rotation) {
+    body.quaternion.set(rotation.x, rotation.y, rotation.z, rotation.w);
+  }
 
-    const localInertia = new Ammo.btVector3(0, 0, 0);
-    if (mass > 0) {
-        shape.calculateLocalInertia(mass, localInertia);
-    }
+  body.linearDamping = 0.2;
+  body.angularDamping = 0.2;
+  body.allowSleep = false;
 
-    const rbInfo = new Ammo.btRigidBodyConstructionInfo(
-        mass,
-        motionState,
-        shape,
-        localInertia
-    );
-
-    const body = new Ammo.btRigidBody(rbInfo);
-
-    physicsWorld.addRigidBody(body);
-
-    return body;
+  state.physicsWorld.addBody(body);
+  return body;
 }
 
 /**
- * Actualiza el mundo físico.
- * Debe llamarse cada frame.
- * @param {number} delta Tiempo en segundos desde el último frame
+ * Crea un constraint de tipo PointToPoint entre dos cuerpos.
+ * @param {CANNON.Body} bodyA
+ * @param {CANNON.Body} bodyB
+ * @param {THREE.Vector3} pivotA
+ * @param {THREE.Vector3} pivotB
+ * @returns {CANNON.PointToPointConstraint}
  */
+export function createPointConstraint(bodyA, bodyB, pivotA, pivotB) {
+  if (!state.physicsWorld) throw new Error('El mundo físico no está inicializado');
+
+  const constraint = new CANNON.PointToPointConstraint(
+    bodyA,
+    new CANNON.Vec3(pivotA.x, pivotA.y, pivotA.z),
+    bodyB,
+    new CANNON.Vec3(pivotB.x, pivotB.y, pivotB.z)
+  );
+  state.physicsWorld.addConstraint(constraint);
+  return constraint;
+}
+
+/**
+ * Crea un constraint de tipo Lock entre dos cuerpos.
+ * Mantiene la posición y rotación relativa inicial de forma rígida.
+ * @param {CANNON.Body} bodyA
+ * @param {CANNON.Body} bodyB
+ * @returns {CANNON.LockConstraint}
+ */
+export function createLockConstraint(bodyA, bodyB) {
+  if (!state.physicsWorld) throw new Error('El mundo físico no está inicializado');
+
+  const constraint = new CANNON.LockConstraint(bodyA, bodyB);
+  state.physicsWorld.addConstraint(constraint);
+  return constraint;
+}
+
+/** Avanza la simulación física. */
 export function updatePhysics(delta) {
-    if (!physicsWorld) return;
-    physicsWorld.stepSimulation(delta, 10);
+  if (!state.physicsWorld) return;
+  state.physicsWorld.step(delta, 1 / 60, 3);
+}
+
+/** Aplica una transformación a un cuerpo rígido. */
+export function setBodyTransform(body, position, quaternion) {
+  body.position.set(position.x, position.y, position.z);
+  body.quaternion.set(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+  body.velocity.set(0, 0, 0);
+  body.angularVelocity.set(0, 0, 0);
+  body.wakeUp();
 }

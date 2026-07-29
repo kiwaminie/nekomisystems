@@ -1,176 +1,278 @@
 import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { initPhysicsWorld, createRigidBodyForBone } from '/src/mikurig/js/physics.js';
+import { state } from './state.js';
+import { initPhysicsWorld, createRigidBody, updatePhysics } from './physics.js';
+import { buildRagdoll, resetRagdoll, syncPhysicsToBones } from './ragdoll.js';
+import { initMouseInteraction } from './interaction.js';
 
-export function InitializeRender(){
-    const scene = new THREE.Scene();
+export async function InitializeRender() {
+  initPhysicsWorld();
 
-    const camera = new THREE.PerspectiveCamera(
-      75,                // FOV
-      window.innerWidth / window.innerHeight,  // Aspect ratio
-      0.01,               // near
-      1000               // far
-    );
+  // ─── Escena ───
+  const scene = new THREE.Scene();
+  state.scene = scene;
+  scene.background = new THREE.Color(0x111116);
+  scene.fog = new THREE.Fog(0x111116, 10, 60);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+  // ─── Cámara ───
+  const camera = new THREE.PerspectiveCamera(
+    60,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+  );
+  state.camera = camera;
+  camera.position.set(0, 1.6, 4.5);
+  camera.lookAt(0, 1, 0);
 
-    renderer.setClearColor(0xffffff, 1); // Color blanco, opacidad 1 (total)
+  // ─── Renderer ───
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  state.renderer = renderer;
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x111116, 1);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  document.body.appendChild(renderer.domElement);
 
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Opcional: sombras suaves
+  // ─── Interacción con mouse ───
+  initMouseInteraction(renderer.domElement);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.minDistance = 0.1;
-    controls.maxDistance = 100;
+  // ─── Controles ───
+  const controls = new OrbitControls(camera, renderer.domElement);
+  state.controls = controls;
+  controls.target.set(0, 1, 0);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.minDistance = 0.5;
+  controls.maxDistance = 20;
+  controls.maxPolarAngle = Math.PI / 2 - 0.05; // evitar pasar bajo el suelo
+  controls.update();
+
+  // ─── Luces ───
+  const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+  scene.add(ambient);
+
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  dirLight.position.set(5, 10, 7);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.set(2048, 2048);
+  dirLight.shadow.camera.near = 0.5;
+  dirLight.shadow.camera.far = 50;
+  dirLight.shadow.camera.left = -10;
+  dirLight.shadow.camera.right = 10;
+  dirLight.shadow.camera.top = 10;
+  dirLight.shadow.camera.bottom = -10;
+  scene.add(dirLight);
+
+  const fillLight = new THREE.DirectionalLight(0x8b7bff, 0.4);
+  fillLight.position.set(-5, 3, -5);
+  scene.add(fillLight);
+
+  // ─── Carga del modelo ───
+  await loadModel(scene);
+
+  // ─── Ragdoll ───
+  buildRagdoll();
+
+  // Ajustar cámara y entorno al tamaño real del modelo para asegurar
+  // que sea visible desde el primer frame.
+  fitCameraToModel(camera, controls, state.model);
+  createEnvironment(scene, state.model);
+
+  // Levantar el body inicial para que el modelo caiga desde el aire.
+  state.boneBodies.forEach(({ body }) => {
+    body.position.y += 1.0;
+  });
+
+  console.log('[mikurig] model loaded, scale', state.model.scale.x.toFixed(2), 'model pos', state.model.position.y.toFixed(2), 'camera pos', camera.position.x.toFixed(2), camera.position.y.toFixed(2), camera.position.z.toFixed(2));
+
+  // Fuerza un primer render para que el modelo sea visible antes de que
+  // el loop de animación acumule errores de integración numérica.
+  renderer.render(scene, camera);
+
+  // ─── Resize ───
+  window.addEventListener('resize', onWindowResize);
+
+  // ─── Loop único ───
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const delta = Math.min(state.clock.getDelta(), 0.05);
+
+    if (state.model) {
+      // La física es la fuente de verdad del ragdoll; solo copiamos de
+      // vuelta a los huesos para que el mesh renderizado la siga.
+      updatePhysics(delta);
+      syncPhysicsToBones();
+
+      // Diagnóstico: delta, posición del modelo y del body cada 10 frames.
+      if (state.frameCount === undefined) state.frameCount = 0;
+      state.frameCount++;
+      if (state.frameCount % 10 === 0) {
+        const root = state.boneBodies.get('__root__');
+        if (root) {
+          console.log('[mikurig] delta', delta.toFixed(4), 'model pos', state.model.position.y.toFixed(3), 'body pos', root.body.position.y.toFixed(3), 'body vel', root.body.velocity.y.toFixed(3));
+        }
+      }
+    }
+
     controls.update();
-
-    // Crear un cubo de prueba
-    const geometry = new THREE.BoxGeometry();
-    const material = new THREE.MeshNormalMaterial();
-    const cube = new THREE.Mesh(geometry, material);
-    //scene.add(cube);
-
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(5, 10, 7.5);
-    light.castShadow = true; // 🔴 HABILITAR sombras
-
-    // Opcional: ajustar calidad de sombra
-    light.shadow.mapSize.width = 2048;
-    light.shadow.mapSize.height = 2048;
-    light.shadow.camera.near = 1;
-    light.shadow.camera.far = 50;
-    light.shadow.camera.left = -10;
-    light.shadow.camera.right = 10;
-    light.shadow.camera.top = 10;
-    light.shadow.camera.bottom = -10;
-
-    scene.add(light);
-
-    camera.position.z = 5;
-    LoadModel(scene);
-
-    const floor = createFloor();
-    scene.add(floor);
-
-    // Animación
-    function animate() {
-      requestAnimationFrame(animate);
-
-      //cube.rotation.x += 0.01;
-      //cube.rotation.y += 0.01;
-
-      controls.update();
-
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    // Hacer responsive el canvas
-    window.addEventListener('resize', () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-
-      // Actualiza tamaño del renderer
-      renderer.setSize(width, height);
-
-      // Actualiza aspecto de la cámara
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-    });
-
-}
-
-export async function InitializePhysics(){
-    const physicsWorld = await initPhysicsWorld();
-
-    // Ejemplo: crear una esfera física en (0,5,0) con radio 1 y masa 1
-    const radius = 1;
-    const shape = new Ammo.btSphereShape(radius);
-    const body = createRigidBody(new THREE.Vector3(0, 5, 0), shape, 1);
-
-    // En tu loop de animación:
-    function animate(time) {
-        requestAnimationFrame(animate);
-        const delta = clock.getDelta();
-        updatePhysics(delta);
-
-        // Aquí sincronizarías la posición de Three.js con Ammo.js
-
-        renderer.render(scene, camera);
-    }
-
+    renderer.render(scene, camera);
+  }
   animate();
 }
 
-function LoadModel(scene){
-    const gltfLoader = new GLTFLoader();
-    
-    gltfLoader.load('/mikurig/models/miku/scene.gltf', function (gltf) {
+/** Carga el modelo GLTF de Miku y lo añade a la escena. */
+function loadModel(scene) {
+  return new Promise((resolve, reject) => {
+    const loader = new GLTFLoader();
+    loader.load(
+      '/mikurig/models/miku/scene.gltf',
+      (gltf) => {
         const model = gltf.scene;
+        state.model = model;
         scene.add(model);
 
-        model.position.set(0, 0, 0); // Opcional: ajustar posición
-        model.scale.set(100, 100, 100)
+        model.position.set(0, 0, 0);
+        // El GLTF de Miku viene en escala muy pequeña; normalizamos la altura
+        // a ~1.7 unidades para que la cámara y el mundo físico sean coherentes.
+        const box = new THREE.Box3().setFromObject(model);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const targetHeight = 1.7;
+        const scale = size.y > 0 ? targetHeight / size.y : 100;
+        model.scale.set(scale, scale, scale);
+        model.updateMatrixWorld(true);
 
-        viewModelContents(model);
-    }, undefined, function (error) {
-        console.error('Error al cargar GLB:', error);
-    });
+        // Colocar el modelo de pie sobre el suelo (pies en y=0).
+        const scaledBox = new THREE.Box3().setFromObject(model);
+        const minY = scaledBox.min.y;
+        model.position.y = -minY;
+        model.updateMatrixWorld(true);
 
-    const loader = new FBXLoader();
+        // Ajustar materiales para sombras
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
 
-    /*loader.load('/mikurig/models/fbx/miku/miku.fbx', function (model) {
-        scene.add(model);
-        model.scale.set(0.01, 0.01, 0.01);
-        viewModelContents(model);
-    }, undefined, function (error) {
-        console.error('Error al cargar FBX:', error);
-    });*/
+        hideLoading();
+        resolve(model);
+      },
+      undefined,
+      (error) => {
+        console.error('Error al cargar GLTF:', error);
+        reject(error);
+      }
+    );
+  });
 }
 
-function viewModelContents(model){
+/** Ajusta cámara y controles para que el modelo sea visible completamente. */
+function fitCameraToModel(camera, controls, model) {
+  if (!model) return;
 
-    const objectToDelete = [
-        'pPlane1', 'pSphere1'
-    ];
+  const box = new THREE.Box3().setFromObject(model);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const center = new THREE.Vector3();
+  box.getCenter(center);
 
-    const modelsToDelete = [];
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const fov = camera.fov * (Math.PI / 180);
+  const distance = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 1.4;
 
-    model.traverse((child) => {
-        if (child.isMesh) {
-            console.log(child.name); // Útil para saber qué eliminar
-        
-            if(objectToDelete.includes(child.name)){
-                modelsToDelete.push(child);
-            }
+  camera.position.set(center.x, center.y + maxDim * 0.35, center.z + distance);
+  camera.lookAt(center);
+  camera.updateProjectionMatrix();
 
-            child.castShadow = true;   // proyecta sombra
-            child.receiveShadow = false; // por si acaso
-        }
-    });
-
-    /*modelsToDelete.forEach(child => {
-        if(child.parent){
-            child.parent.remove(child);
-        }
-    });*/
+  if (controls) {
+    controls.target.copy(center);
+    controls.update();
+  }
 }
 
-function createFloor(){
-    const floorGeometry = new THREE.PlaneGeometry(100, 100); // ancho y largo
-    const floorMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x888888, 
-        side: THREE.DoubleSide // para que se vea desde ambos lados
-    });
+/** Crea suelo y paredes invisibles para contener el ragdoll. */
+function createEnvironment(scene, model) {
+  // Estimar tamaño necesario del entorno a partir del modelo.
+  let envSize = 40;
+  let envHeight = 20;
+  if (model) {
+    const box = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    envSize = Math.max(40, maxDim * 4);
+    envHeight = Math.max(20, maxDim * 2);
+  }
 
-    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.rotation.x = -Math.PI / 2; // gira el plano para que quede horizontal
-    floor.position.y = 0; // altura del suelo
+  // Suelo
+  const floorGeo = new THREE.PlaneGeometry(envSize, envSize);
+  const floorMat = new THREE.MeshStandardMaterial({
+    color: 0x22222a,
+    roughness: 0.8,
+    metalness: 0.1,
+    side: THREE.DoubleSide,
+  });
+  const floor = new THREE.Mesh(floorGeo, floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
 
-    floor.receiveShadow = true; // si estás usando sombras
-    return floor;
+  const groundShape = new CANNON.Plane();
+  const groundBody = createRigidBody(new THREE.Vector3(0, 0, 0), groundShape, 0);
+  groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+  state.staticBodies.push(groundBody);
+
+  // Paredes invisibles (caja grande)
+  const wallMat = new THREE.MeshBasicMaterial({
+    color: 0x111116,
+    transparent: true,
+    opacity: 0.0,
+    side: THREE.DoubleSide,
+  });
+  const halfSize = envSize / 2;
+  const walls = [
+    { pos: [0, envHeight / 2, -halfSize], size: [envSize, envHeight, 0.5] },
+    { pos: [0, envHeight / 2, halfSize], size: [envSize, envHeight, 0.5] },
+    { pos: [-halfSize, envHeight / 2, 0], size: [0.5, envHeight, envSize] },
+    { pos: [halfSize, envHeight / 2, 0], size: [0.5, envHeight, envSize] },
+  ];
+  walls.forEach(({ pos, size }) => {
+    const geo = new THREE.BoxGeometry(size[0], size[1], size[2]);
+    const mesh = new THREE.Mesh(geo, wallMat);
+    mesh.position.set(...pos);
+    scene.add(mesh);
+
+    const halfExtents = new CANNON.Vec3(size[0] / 2, size[1] / 2, size[2] / 2);
+    const shape = new CANNON.Box(halfExtents);
+    const body = createRigidBody(mesh.position, shape, 0);
+    state.staticBodies.push(body);
+  });
+}
+
+/** Redimensiona renderer y cámara al cambiar el tamaño de ventana. */
+function onWindowResize() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  state.renderer.setSize(width, height);
+  state.camera.aspect = width / height;
+  state.camera.updateProjectionMatrix();
+}
+
+/** Expuesto para el botón de reset en la UI. */
+export function resetModel() {
+  resetRagdoll();
+}
+
+function hideLoading() {
+  const loading = document.getElementById('loading');
+  if (loading) {
+    loading.classList.add('hidden');
+  }
 }
