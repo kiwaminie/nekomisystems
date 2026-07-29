@@ -86,6 +86,7 @@ export async function InitializeRender() {
   state.boneBodies.forEach(({ body }) => {
     body.position.y += 1.0;
   });
+  syncPhysicsToBones();
 
   console.log('[mikurig] model loaded, scale', state.model.scale.x.toFixed(2), 'model pos', state.model.position.y.toFixed(2), 'camera pos', camera.position.x.toFixed(2), camera.position.y.toFixed(2), camera.position.z.toFixed(2));
 
@@ -112,9 +113,9 @@ export async function InitializeRender() {
       if (state.frameCount === undefined) state.frameCount = 0;
       state.frameCount++;
       if (state.frameCount % 10 === 0) {
-        const root = state.boneBodies.get('__root__');
-        if (root) {
-          console.log('[mikurig] delta', delta.toFixed(4), 'model pos', state.model.position.y.toFixed(3), 'body pos', root.body.position.y.toFixed(3), 'body vel', root.body.velocity.y.toFixed(3));
+        const hips = state.boneBodies.get('Hips_05');
+        if (hips) {
+          console.log('[mikurig] delta', delta.toFixed(4), 'model pos', state.model.position.y.toFixed(3), 'hips pos', hips.body.position.y.toFixed(3), 'hips vel', hips.body.velocity.y.toFixed(3));
         }
       }
     }
@@ -158,8 +159,16 @@ function loadModel(scene) {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
+            child.frustumCulled = false;
+          }
+          if (child.isSkinnedMesh && !state.skeleton) {
+            state.skeleton = child.skeleton;
           }
         });
+
+        if (!state.skeleton) {
+          console.warn('[mikurig] no skeleton found in model');
+        }
 
         hideLoading();
         resolve(model);

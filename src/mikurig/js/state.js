@@ -25,8 +25,10 @@ export const state = {
   dragPlane: null,
   dragDistance: null,
   draggedBone: null,
-  /** Offset del centro del body rígido respecto al modelo */
-  ragdollCenterOffset: null,
+  /** Matriz inversa del padre de Hips para transformar world -> local del armature */
+  hipsParentWorldMatInv: null,
+  /** Quaternion world del armature para transformar world -> local del armature */
+  armatureWorldQuat: null,
 };
 
 /** Guarda la referencia del mundo físico una vez inicializado. */

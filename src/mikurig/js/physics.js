@@ -85,7 +85,8 @@ export function createLockConstraint(bodyA, bodyB) {
 /** Avanza la simulación física. */
 export function updatePhysics(delta) {
   if (!state.physicsWorld) return;
-  state.physicsWorld.step(delta, 1 / 60, 3);
+  // Primer argumento: timestep fijo (1/60 s); segundo: tiempo real transcurrido.
+  state.physicsWorld.step(1 / 60, delta, 3);
 }
 
 /** Aplica una transformación a un cuerpo rígido. */
