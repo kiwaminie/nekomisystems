@@ -206,25 +206,35 @@ function fitCameraToModel(camera, controls, model) {
   }
 }
 
-/** Crea suelo y paredes invisibles para contener el ragdoll. */
+/**
+ * Crea la "caja" que contiene a Miku: suelo, techo y cuatro paredes.
+ * La pared frontal (hacia la cámara) es la "cuarta pared": existe físicamente
+ * para contener el ragdoll, pero es invisible para que el usuario mire dentro.
+ */
 function createEnvironment(scene, model) {
-  // Estimar tamaño necesario del entorno a partir del modelo.
-  let envSize = 40;
-  let envHeight = 20;
+  // Dimensionar la caja de forma ajustada al modelo para que Miku realmente
+  // choque contra las paredes en lugar de flotar en un espacio enorme.
+  let modelHeight = 1.7;
+  let modelWidth = 0.6;
   if (model) {
     const box = new THREE.Box3().setFromObject(model);
     const size = new THREE.Vector3();
     box.getSize(size);
-    const maxDim = Math.max(size.x, size.y, size.z);
-    envSize = Math.max(40, maxDim * 4);
-    envHeight = Math.max(20, maxDim * 2);
+    modelHeight = size.y || modelHeight;
+    modelWidth = Math.max(size.x, size.z) || modelWidth;
   }
 
-  // Suelo
-  const floorGeo = new THREE.PlaneGeometry(envSize, envSize);
+  // Interior de la caja (ancho/profundo cuadrado + alto).
+  const W = Math.max(2.4, modelWidth * 3.2);
+  const H = Math.max(2.6, modelHeight * 1.7);
+  const half = W / 2;
+  const t = 0.2; // grosor de pared
+
+  // ─── Suelo visible ───
+  const floorGeo = new THREE.PlaneGeometry(W, W);
   const floorMat = new THREE.MeshStandardMaterial({
     color: 0x22222a,
-    roughness: 0.8,
+    roughness: 0.85,
     metalness: 0.1,
     side: THREE.DoubleSide,
   });
@@ -233,36 +243,57 @@ function createEnvironment(scene, model) {
   floor.receiveShadow = true;
   scene.add(floor);
 
+  // Suelo físico: plano infinito a y = 0 (coincide con el suelo visible).
   const groundShape = new CANNON.Plane();
   const groundBody = createRigidBody(new THREE.Vector3(0, 0, 0), groundShape, 0);
   groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
   state.staticBodies.push(groundBody);
 
-  // Paredes invisibles (caja grande)
-  const wallMat = new THREE.MeshBasicMaterial({
-    color: 0x111116,
+  // Materiales de paredes: paneles semitransparentes visibles vs. invisibles.
+  const panelMat = new THREE.MeshStandardMaterial({
+    color: 0x2a2a38,
+    roughness: 0.9,
+    metalness: 0.05,
     transparent: true,
-    opacity: 0.0,
+    opacity: 0.35,
     side: THREE.DoubleSide,
   });
-  const halfSize = envSize / 2;
+  const invisibleMat = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+  });
+
+  // La cámara mira hacia -z desde +z, así que el frente abierto es +z.
   const walls = [
-    { pos: [0, envHeight / 2, -halfSize], size: [envSize, envHeight, 0.5] },
-    { pos: [0, envHeight / 2, halfSize], size: [envSize, envHeight, 0.5] },
-    { pos: [-halfSize, envHeight / 2, 0], size: [0.5, envHeight, envSize] },
-    { pos: [halfSize, envHeight / 2, 0], size: [0.5, envHeight, envSize] },
+    { pos: [0, H / 2, -half], size: [W, H, t], mat: panelMat },       // fondo
+    { pos: [-half, H / 2, 0], size: [t, H, W], mat: panelMat },       // izquierda
+    { pos: [half, H / 2, 0], size: [t, H, W], mat: panelMat },        // derecha
+    { pos: [0, H / 2, half], size: [W, H, t], mat: invisibleMat },    // cuarta pared (abierta)
+    { pos: [0, H, 0], size: [W, t, W], mat: invisibleMat },           // techo
   ];
-  walls.forEach(({ pos, size }) => {
+  walls.forEach(({ pos, size, mat }) => {
     const geo = new THREE.BoxGeometry(size[0], size[1], size[2]);
-    const mesh = new THREE.Mesh(geo, wallMat);
+    const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(...pos);
+    mesh.receiveShadow = true;
     scene.add(mesh);
 
     const halfExtents = new CANNON.Vec3(size[0] / 2, size[1] / 2, size[2] / 2);
     const shape = new CANNON.Box(halfExtents);
-    const body = createRigidBody(mesh.position, shape, 0);
+    const body = createRigidBody(new THREE.Vector3(pos[0], pos[1], pos[2]), shape, 0);
     state.staticBodies.push(body);
   });
+
+  // Contorno tipo wireframe para que la caja se lea claramente.
+  const cageGeo = new THREE.BoxGeometry(W, H, W);
+  const edges = new THREE.EdgesGeometry(cageGeo);
+  const cage = new THREE.LineSegments(
+    edges,
+    new THREE.LineBasicMaterial({ color: 0x5f3fff, transparent: true, opacity: 0.5 })
+  );
+  cage.position.set(0, H / 2, 0);
+  scene.add(cage);
 }
 
 /** Redimensiona renderer y cámara al cambiar el tamaño de ventana. */

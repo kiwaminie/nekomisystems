@@ -219,19 +219,29 @@ export function syncPhysicsToBones() {
     }
   });
 
+  // Primero refrescamos las matrices con las nuevas rotaciones locales de los
+  // huesos, para poder medir dónde queda realmente el hueso Hips en el mundo.
+  skeleton.update();
+  state.model.updateMatrixWorld(true);
+
+  // Corrección de posición basada en delta: en lugar de derivar la posición del
+  // modelo con una matriz (que ignora el offset local del hueso Hips y hacía que
+  // Miku "flotara"), calculamos la diferencia entre dónde debería estar el Hips
+  // (según la física) y dónde está ahora, y desplazamos el modelo esa cantidad.
   const hipsEntry = state.boneBodies.get('Hips_05');
   if (hipsEntry) {
-    const hipsWorld = new THREE.Vector3(
+    const targetHipsWorld = new THREE.Vector3(
       hipsEntry.body.position.x,
       hipsEntry.body.position.y,
       hipsEntry.body.position.z
     );
-    const modelPos = hipsWorld.clone().applyMatrix4(state.hipsParentWorldMatInv);
-    state.model.position.copy(modelPos);
-  }
+    const currentHipsWorld = new THREE.Vector3();
+    hipsEntry.bone.getWorldPosition(currentHipsWorld);
 
-  skeleton.update();
-  state.model.updateMatrixWorld(true);
+    const delta = targetHipsWorld.sub(currentHipsWorld);
+    state.model.position.add(delta);
+    state.model.updateMatrixWorld(true);
+  }
 }
 
 export function resetRagdoll() {

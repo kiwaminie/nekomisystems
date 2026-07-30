@@ -3,27 +3,33 @@ import * as CANNON from 'cannon-es';
 import { state } from './state.js';
 
 const raycaster = new THREE.Raycaster();
-const mouseNDC = new THREE.Vector2();
+const pointerNDC = new THREE.Vector2();
 let canvasElement = null;
+/** Id del puntero activo para soportar un único drag a la vez (mouse o dedo). */
+let activePointerId = null;
 
-function updateMouseNDC(event) {
+/** Grupo de colisión del ragdoll (ver ragdoll.js). */
+const RAGDOLL_GROUP = 2;
+
+function updatePointerNDC(event) {
   if (!canvasElement) return;
   const rect = canvasElement.getBoundingClientRect();
-  mouseNDC.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-  mouseNDC.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  pointerNDC.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+  pointerNDC.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
 }
 
-/** Crea un cuerpo estático para el cursor del mouse. */
-function createMouseBody(point) {
-  const mouseBody = new CANNON.Body({
+/** Crea un cuerpo cinemático (sin colisiones) que sigue al puntero. */
+function createPointerBody(point) {
+  const body = new CANNON.Body({
     mass: 0,
+    type: CANNON.Body.KINEMATIC,
     position: new CANNON.Vec3(point.x, point.y, point.z),
-    shape: new CANNON.Sphere(0.01),
+    shape: new CANNON.Sphere(0.02),
     collisionFilterGroup: 0,
     collisionFilterMask: 0,
   });
-  state.physicsWorld.addBody(mouseBody);
-  return mouseBody;
+  state.physicsWorld.addBody(body);
+  return body;
 }
 
 /** Convierte un punto world al espacio local de un body Cannon. */
@@ -38,87 +44,125 @@ function worldToLocalPivot(point, body) {
   return point.clone().sub(bodyPos).applyQuaternion(bodyQuat.clone().invert());
 }
 
-function onMouseDown(event) {
-  if (!state.camera || !state.physicsWorld || state.boneBodies.size === 0) return;
+/**
+ * Determina qué hueso del ragdoll está bajo el puntero.
+ * @returns {{ entry: object, point: THREE.Vector3 } | null}
+ */
+function pickTarget() {
+  raycaster.setFromCamera(pointerNDC, state.camera);
 
-  updateMouseNDC(event);
-  raycaster.setFromCamera(mouseNDC, state.camera);
-
-  // 1) Intentar intersectar contra el mesh visible primero.
   let hitPoint = null;
-  if (state.model) {
+  let hitBody = null;
+
+  // 1) Raycast físico limitado al ragdoll (ignora suelo/paredes/puntero).
+  const origin = raycaster.ray.origin;
+  const dir = raycaster.ray.direction;
+  const rayFrom = new CANNON.Vec3(origin.x, origin.y, origin.z);
+  const rayTo = new CANNON.Vec3(
+    origin.x + dir.x * 100,
+    origin.y + dir.y * 100,
+    origin.z + dir.z * 100
+  );
+  const result = new CANNON.RaycastResult();
+  state.physicsWorld.raycastClosest(
+    rayFrom,
+    rayTo,
+    { collisionFilterMask: RAGDOLL_GROUP, skipBackfaces: false },
+    result
+  );
+  if (result.hasHit && result.body) {
+    hitBody = result.body;
+    hitPoint = new THREE.Vector3(
+      result.hitPointWorld.x,
+      result.hitPointWorld.y,
+      result.hitPointWorld.z
+    );
+  }
+
+  // 2) Fallback: intersección contra el mesh visible.
+  if (!hitPoint && state.model) {
     const intersections = raycaster.intersectObject(state.model, true);
     if (intersections.length > 0) {
-      hitPoint = intersections[0].point;
+      hitPoint = intersections[0].point.clone();
     }
   }
 
-  // 2) Fallback: raycast físico contra los cuerpos del ragdoll.
-  let hitBody = null;
-  if (!hitPoint) {
-    const rayFrom = new CANNON.Vec3(raycaster.ray.origin.x, raycaster.ray.origin.y, raycaster.ray.origin.z);
-    const rayTo = new CANNON.Vec3(
-      raycaster.ray.origin.x + raycaster.ray.direction.x * 100,
-      raycaster.ray.origin.y + raycaster.ray.direction.y * 100,
-      raycaster.ray.origin.z + raycaster.ray.direction.z * 100
-    );
-    const rayResult = new CANNON.RaycastResult();
-    state.physicsWorld.raycastClosest(rayFrom, rayTo, {}, rayResult);
-    if (rayResult.body) {
-      hitBody = rayResult.body;
-      hitPoint = new THREE.Vector3(rayResult.hitPointWorld.x, rayResult.hitPointWorld.y, rayResult.hitPointWorld.z);
-    }
-  }
+  if (!hitPoint) return null;
 
-  if (!hitPoint) return;
-
-  // 3) Determinar cuál body del ragdoll vamos a arrastrar.
-  let targetEntry = null;
+  // 3) Resolver la entrada del ragdoll asociada.
+  let entry = null;
   if (hitBody) {
-    state.boneBodies.forEach((entry) => {
-      if (entry.body === hitBody) targetEntry = entry;
+    state.boneBodies.forEach((e) => {
+      if (e.body === hitBody) entry = e;
     });
   }
-  if (!targetEntry) {
-    // Si no hay body directo, elegir el body más cercano al punto de impacto.
+  if (!entry) {
+    // Sin body directo: elegir el más cercano al punto de impacto.
     let nearestDist = Infinity;
-    state.boneBodies.forEach((entry) => {
-      const bodyPos = new THREE.Vector3(entry.body.position.x, entry.body.position.y, entry.body.position.z);
+    state.boneBodies.forEach((e) => {
+      const bodyPos = new THREE.Vector3(e.body.position.x, e.body.position.y, e.body.position.z);
       const dist = bodyPos.distanceTo(hitPoint);
       if (dist < nearestDist) {
         nearestDist = dist;
-        targetEntry = entry;
+        entry = e;
       }
     });
   }
-  if (!targetEntry) return;
+  if (!entry) return null;
 
-  state.dragDistance = state.camera.position.distanceTo(hitPoint);
-  state.draggedBone = targetEntry;
+  return { entry, point: hitPoint };
+}
 
-  const mouseBody = createMouseBody(hitPoint);
-  state.mouseBody = mouseBody;
+function onPointerDown(event) {
+  if (activePointerId !== null) return;
+  if (!state.camera || !state.physicsWorld || state.boneBodies.size === 0) return;
 
-  const pivot = worldToLocalPivot(hitPoint, targetEntry.body);
+  updatePointerNDC(event);
+  const picked = pickTarget();
+  if (!picked) return;
+
+  event.preventDefault();
+  activePointerId = event.pointerId;
+  if (canvasElement && canvasElement.setPointerCapture) {
+    try {
+      canvasElement.setPointerCapture(event.pointerId);
+    } catch (_) {
+      /* ignorar */
+    }
+  }
+
+  const { entry, point } = picked;
+  state.dragDistance = state.camera.position.distanceTo(point);
+  state.draggedBone = entry;
+
+  const pointerBody = createPointerBody(point);
+  state.mouseBody = pointerBody;
+
+  const pivot = worldToLocalPivot(point, entry.body);
   const constraint = new CANNON.PointToPointConstraint(
-    targetEntry.body,
+    entry.body,
     new CANNON.Vec3(pivot.x, pivot.y, pivot.z),
-    mouseBody,
+    pointerBody,
     new CANNON.Vec3(0, 0, 0)
   );
+  constraint.collideConnected = false;
   state.physicsWorld.addConstraint(constraint);
   state.mouseConstraint = constraint;
 
+  entry.body.wakeUp();
+
+  // Desactivar OrbitControls mientras se arrastra (evita rotar la cámara).
   if (state.controls) {
     state.controls.enabled = false;
   }
 }
 
-function onMouseMove(event) {
+function onPointerMove(event) {
+  if (activePointerId !== event.pointerId) return;
   if (!state.mouseBody || state.dragDistance == null || !state.camera) return;
 
-  updateMouseNDC(event);
-  raycaster.setFromCamera(mouseNDC, state.camera);
+  updatePointerNDC(event);
+  raycaster.setFromCamera(pointerNDC, state.camera);
 
   const hit = new THREE.Vector3()
     .copy(raycaster.ray.origin)
@@ -126,9 +170,23 @@ function onMouseMove(event) {
 
   state.mouseBody.position.set(hit.x, hit.y, hit.z);
   state.mouseBody.wakeUp();
+  if (state.draggedBone) {
+    state.draggedBone.body.wakeUp();
+  }
 }
 
-function onMouseUp() {
+function onPointerUp(event) {
+  if (activePointerId !== event.pointerId) return;
+  activePointerId = null;
+
+  if (canvasElement && canvasElement.releasePointerCapture) {
+    try {
+      canvasElement.releasePointerCapture(event.pointerId);
+    } catch (_) {
+      /* ignorar */
+    }
+  }
+
   if (!state.physicsWorld) return;
 
   if (state.mouseConstraint) {
@@ -150,7 +208,12 @@ function onMouseUp() {
 
 export function initMouseInteraction(domElement) {
   canvasElement = domElement;
-  domElement.addEventListener('mousedown', onMouseDown);
-  window.addEventListener('mousemove', onMouseMove);
-  window.addEventListener('mouseup', onMouseUp);
+  // Evita el scroll/zoom nativo del navegador al arrastrar en pantallas táctiles.
+  domElement.style.touchAction = 'none';
+
+  // Pointer Events unifican mouse y touch en una sola API.
+  domElement.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', onPointerUp);
 }
