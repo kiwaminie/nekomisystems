@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { state } from './state.js';
 import { initPhysicsWorld, createRigidBody, updatePhysics } from './physics.js';
 import { buildRagdoll, resetRagdoll, syncPhysicsToBones } from './ragdoll.js';
@@ -40,16 +39,11 @@ export async function InitializeRender() {
   // ─── Interacción con mouse ───
   initMouseInteraction(renderer.domElement);
 
-  // ─── Controles ───
-  const controls = new OrbitControls(camera, renderer.domElement);
-  state.controls = controls;
-  controls.target.set(0, 1, 0);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
-  controls.minDistance = 0.5;
-  controls.maxDistance = 20;
-  controls.maxPolarAngle = Math.PI / 2 - 0.05; // evitar pasar bajo el suelo
-  controls.update();
+  // ─── Cámara fija (sin OrbitControls) ───
+  // La cámara permanece estática para dar la ilusión de que Miku está dentro
+  // de una caja y el usuario observa desde la "cuarta pared". No hay controles
+  // orbitales: no se puede rotar, hacer zoom ni desplazar la vista.
+  state.controls = null;
 
   // ─── Luces ───
   const ambient = new THREE.AmbientLight(0xffffff, 0.6);
@@ -77,10 +71,10 @@ export async function InitializeRender() {
   // ─── Ragdoll ───
   buildRagdoll();
 
-  // Ajustar cámara y entorno al tamaño real del modelo para asegurar
-  // que sea visible desde el primer frame.
-  fitCameraToModel(camera, controls, state.model);
+  // Construir la caja y encuadrar la cámara fija para ver todo el interior
+  // desde el primer frame.
   createEnvironment(scene, state.model);
+  fitCameraToBox(camera);
 
   // Levantar el body inicial para que el modelo caiga desde el aire.
   state.boneBodies.forEach(({ body }) => {
@@ -120,7 +114,6 @@ export async function InitializeRender() {
       }
     }
 
-    controls.update();
     renderer.render(scene, camera);
   }
   animate();
@@ -182,28 +175,30 @@ function loadModel(scene) {
   });
 }
 
-/** Ajusta cámara y controles para que el modelo sea visible completamente. */
-function fitCameraToModel(camera, controls, model) {
-  if (!model) return;
+/**
+ * Coloca la cámara en una posición fija frente a la "cuarta pared" abierta,
+ * encuadrando toda la caja (ancho y alto) según el aspect ratio actual.
+ */
+function fitCameraToBox(camera) {
+  const size = state.boxSize;
+  if (!size) return;
 
-  const box = new THREE.Box3().setFromObject(model);
-  const size = new THREE.Vector3();
-  box.getSize(size);
-  const center = new THREE.Vector3();
-  box.getCenter(center);
-
-  const maxDim = Math.max(size.x, size.y, size.z);
+  const { W, H } = size;
+  const aspect = camera.aspect || window.innerWidth / window.innerHeight;
   const fov = camera.fov * (Math.PI / 180);
-  const distance = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 1.4;
+  const tan = Math.tan(fov / 2);
 
-  camera.position.set(center.x, center.y + maxDim * 0.35, center.z + distance);
-  camera.lookAt(center);
+  // Distancia necesaria para que quepan tanto el alto como el ancho.
+  const distForHeight = (H / 2) / tan;
+  const distForWidth = (W / 2) / (tan * aspect);
+  const margin = 1.12;
+  const distance = Math.max(distForHeight, distForWidth) * margin;
+
+  // Centro vertical de la caja; la cámara mira recto hacia el interior (-z).
+  const targetY = H / 2;
+  camera.position.set(0, targetY, W / 2 + distance);
+  camera.lookAt(0, targetY, 0);
   camera.updateProjectionMatrix();
-
-  if (controls) {
-    controls.target.copy(center);
-    controls.update();
-  }
 }
 
 /**
@@ -229,6 +224,9 @@ function createEnvironment(scene, model) {
   const H = Math.max(2.6, modelHeight * 1.7);
   const half = W / 2;
   const t = 0.2; // grosor de pared
+
+  // Guardar dimensiones para encuadrar la cámara fija (y recalcular en resize).
+  state.boxSize = { W, H };
 
   // ─── Suelo visible ───
   const floorGeo = new THREE.PlaneGeometry(W, W);
@@ -303,6 +301,8 @@ function onWindowResize() {
   state.renderer.setSize(width, height);
   state.camera.aspect = width / height;
   state.camera.updateProjectionMatrix();
+  // Reencuadrar la caja para que siga vista completa (importante en móvil).
+  fitCameraToBox(state.camera);
 }
 
 /** Expuesto para el botón de reset en la UI. */

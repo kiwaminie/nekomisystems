@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 /**
  * Estado compartido entre render y física para evitar variables globales
@@ -9,7 +8,10 @@ export const state = {
   scene: null,
   camera: null,
   renderer: null,
+  /** OrbitControls o null cuando la cámara es fija (vista "cuarta pared"). */
   controls: null,
+  /** { W, H } de la caja para encuadrar la cámara fija. */
+  boxSize: null,
   clock: new THREE.Clock(),
   physicsWorld: null,
   model: null,
