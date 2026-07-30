@@ -21,12 +21,15 @@ export const state = {
   constraints: [],
   /** Lista de bodies estáticos (suelo, paredes) para no mezclarlos con el ragdoll */
   staticBodies: [],
+  /** Esferas interactivas: [{ mesh, body, light? }] */
+  spheres: [],
   /** Estado del drag con mouse */
   mouseBody: null,
   mouseConstraint: null,
   dragPlane: null,
   dragDistance: null,
-  draggedBone: null,
+  /** Body actualmente arrastrado (hueso del ragdoll o esfera). */
+  draggedBody: null,
   /** Matriz inversa del padre de Hips para transformar world -> local del armature */
   hipsParentWorldMatInv: null,
   /** Quaternion world del armature para transformar world -> local del armature */

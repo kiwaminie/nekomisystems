@@ -82,11 +82,37 @@ export function createLockConstraint(bodyA, bodyB) {
   return constraint;
 }
 
+/**
+ * Límites de velocidad para evitar que el solver inyecte energía y las
+ * extremidades (manos/pies) giren sobre su propio eje sin control.
+ */
+const MAX_ANGULAR_VELOCITY = 12; // rad/s
+const MAX_LINEAR_VELOCITY = 25; // u/s
+
+/** Recorta velocidades excesivas en todos los cuerpos dinámicos. */
+function clampVelocities() {
+  const bodies = state.physicsWorld.bodies;
+  for (let i = 0; i < bodies.length; i++) {
+    const b = bodies[i];
+    if (b.mass <= 0) continue; // estáticos/cinemáticos no se tocan
+
+    const av = b.angularVelocity.length();
+    if (av > MAX_ANGULAR_VELOCITY) {
+      b.angularVelocity.scale(MAX_ANGULAR_VELOCITY / av, b.angularVelocity);
+    }
+    const lv = b.velocity.length();
+    if (lv > MAX_LINEAR_VELOCITY) {
+      b.velocity.scale(MAX_LINEAR_VELOCITY / lv, b.velocity);
+    }
+  }
+}
+
 /** Avanza la simulación física. */
 export function updatePhysics(delta) {
   if (!state.physicsWorld) return;
   // Primer argumento: timestep fijo (1/60 s); segundo: tiempo real transcurrido.
   state.physicsWorld.step(1 / 60, delta, 3);
+  clampVelocities();
 }
 
 /** Aplica una transformación a un cuerpo rígido. */

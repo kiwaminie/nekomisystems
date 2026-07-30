@@ -74,6 +74,7 @@ export async function InitializeRender() {
   // Construir la caja y encuadrar la cámara fija para ver todo el interior
   // desde el primer frame.
   createEnvironment(scene, state.model);
+  createInteractiveObjects(scene);
   fitCameraToBox(camera);
 
   // Levantar el body inicial para que el modelo caiga desde el aire.
@@ -102,6 +103,7 @@ export async function InitializeRender() {
       // vuelta a los huesos para que el mesh renderizado la siga.
       updatePhysics(delta);
       syncPhysicsToBones();
+      syncSpheres();
 
       // Diagnóstico: delta, posición del modelo y del body cada 10 frames.
       if (state.frameCount === undefined) state.frameCount = 0;
@@ -188,17 +190,110 @@ function fitCameraToBox(camera) {
   const fov = camera.fov * (Math.PI / 180);
   const tan = Math.tan(fov / 2);
 
-  // Distancia necesaria para que quepan tanto el alto como el ancho.
+  // Distancia a la que la caja cubre por completo el viewport (sin bordes
+  // vacíos): tomamos la MENOR de las dos distancias para que el eje más
+  // exigente quede a ras y el otro rebose ligeramente fuera de la pantalla.
   const distForHeight = (H / 2) / tan;
   const distForWidth = (W / 2) / (tan * aspect);
-  const margin = 1.12;
-  const distance = Math.max(distForHeight, distForWidth) * margin;
+  const margin = 0.98; // <1 => sobra un poco hacia dentro, nunca deja hueco
+  const distance = Math.min(distForHeight, distForWidth) * margin;
 
   // Centro vertical de la caja; la cámara mira recto hacia el interior (-z).
   const targetY = H / 2;
   camera.position.set(0, targetY, W / 2 + distance);
   camera.lookAt(0, targetY, 0);
   camera.updateProjectionMatrix();
+}
+
+/** Sincroniza las esferas físicas con sus mallas y su luz (si la tienen). */
+function syncSpheres() {
+  if (!state.spheres) return;
+  state.spheres.forEach(({ mesh, body, light }) => {
+    mesh.position.set(body.position.x, body.position.y, body.position.z);
+    mesh.quaternion.set(
+      body.quaternion.x,
+      body.quaternion.y,
+      body.quaternion.z,
+      body.quaternion.w
+    );
+    if (light) {
+      light.position.copy(mesh.position);
+    }
+  });
+}
+
+/**
+ * Crea dos esferas arrastrables dentro de la caja:
+ *  - una pelota normal (opaca), y
+ *  - una esfera emisiva que lleva una luz puntual con sombras.
+ * Ambas pertenecen al grupo de colisión arrastrable (2), igual que Miku.
+ */
+function createInteractiveObjects(scene) {
+  const { W, H } = state.boxSize || { W: 2.4, H: 2.6 };
+  const DRAG_GROUP = 2;
+
+  // ─── Pelota normal ───
+  const r1 = Math.max(0.18, W * 0.09);
+  const ballMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(r1, 32, 32),
+    new THREE.MeshStandardMaterial({ color: 0x4bd6ff, roughness: 0.35, metalness: 0.15 })
+  );
+  ballMesh.castShadow = true;
+  ballMesh.receiveShadow = true;
+  scene.add(ballMesh);
+
+  const ballBody = createRigidBody(
+    new THREE.Vector3(-W * 0.22, H * 0.62, 0.15),
+    new CANNON.Sphere(r1),
+    1.2
+  );
+  ballBody.collisionFilterGroup = DRAG_GROUP;
+  ballBody.collisionFilterMask = 1 | 2;
+  ballBody.linearDamping = 0.2;
+  ballBody.angularDamping = 0.35;
+  ballBody.allowSleep = false;
+  state.spheres.push({ mesh: ballMesh, body: ballBody });
+
+  // ─── Esfera emisiva con luz puntual ───
+  const r2 = Math.max(0.16, W * 0.08);
+  const lightColor = 0xffb14e;
+  const glowMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(r2, 32, 32),
+    new THREE.MeshStandardMaterial({
+      color: 0x1a1206,
+      emissive: lightColor,
+      emissiveIntensity: 2.2,
+      roughness: 0.5,
+      metalness: 0.0,
+    })
+  );
+  // La fuente de luz no proyecta su propia sombra dura (se vería antinatural).
+  glowMesh.castShadow = false;
+  glowMesh.receiveShadow = false;
+  scene.add(glowMesh);
+
+  const glowBody = createRigidBody(
+    new THREE.Vector3(W * 0.22, H * 0.55, 0.15),
+    new CANNON.Sphere(r2),
+    1.0
+  );
+  glowBody.collisionFilterGroup = DRAG_GROUP;
+  glowBody.collisionFilterMask = 1 | 2;
+  glowBody.linearDamping = 0.2;
+  glowBody.angularDamping = 0.35;
+  glowBody.allowSleep = false;
+
+  // Luz puntual que reacciona con Miku, la pelota y las paredes, y proyecta
+  // sombras desde la posición de la esfera.
+  const pointLight = new THREE.PointLight(lightColor, 18, W * 4, 2);
+  pointLight.castShadow = true;
+  pointLight.shadow.mapSize.set(1024, 1024);
+  pointLight.shadow.camera.near = 0.05;
+  pointLight.shadow.camera.far = W * 4;
+  pointLight.shadow.bias = -0.005;
+  scene.add(pointLight);
+
+  state.spheres.push({ mesh: glowMesh, body: glowBody, light: pointLight });
 }
 
 /**
@@ -268,7 +363,7 @@ function createEnvironment(scene, model) {
     { pos: [-half, H / 2, 0], size: [t, H, W], mat: panelMat },       // izquierda
     { pos: [half, H / 2, 0], size: [t, H, W], mat: panelMat },        // derecha
     { pos: [0, H / 2, half], size: [W, H, t], mat: invisibleMat },    // cuarta pared (abierta)
-    { pos: [0, H, 0], size: [W, t, W], mat: invisibleMat },           // techo
+    { pos: [0, H, 0], size: [W, t, W], mat: panelMat },               // techo (visible: evita ver el fondo)
   ];
   walls.forEach(({ pos, size, mat }) => {
     const geo = new THREE.BoxGeometry(size[0], size[1], size[2]);

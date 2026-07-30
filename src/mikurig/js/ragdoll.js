@@ -4,7 +4,11 @@ import { state } from './state.js';
 import { createRigidBody, createPointConstraint, setBodyTransform } from './physics.js';
 
 const BODY_MASS = 1.5;
-const BODY_DAMPING = 0.15;
+// Amortiguación base más alta para estabilizar el ragdoll y evitar vibraciones.
+const LINEAR_DAMPING = 0.3;
+const ANGULAR_DAMPING = 0.6;
+// Manos y pies tienden a girar sobre su eje; les damos aún más amortiguación.
+const EXTREMITY_ANGULAR_DAMPING = 0.9;
 
 const BONE_PARTS = [
   { name: 'Hips_05', type: 'sphere', radius: 0.13 },
@@ -138,8 +142,9 @@ export function buildRagdoll() {
       }
     }
 
-    body.linearDamping = BODY_DAMPING;
-    body.angularDamping = BODY_DAMPING;
+    const isExtremity = /Hand_|Foot_/.test(def.name);
+    body.linearDamping = LINEAR_DAMPING;
+    body.angularDamping = isExtremity ? EXTREMITY_ANGULAR_DAMPING : ANGULAR_DAMPING;
     body.collisionFilterGroup = 2;
     body.collisionFilterMask = 1 | 2;
     body.allowSleep = false;

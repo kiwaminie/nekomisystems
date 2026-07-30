@@ -45,8 +45,9 @@ function worldToLocalPivot(point, body) {
 }
 
 /**
- * Determina qué hueso del ragdoll está bajo el puntero.
- * @returns {{ entry: object, point: THREE.Vector3 } | null}
+ * Determina qué cuerpo arrastrable (hueso del ragdoll o esfera) está bajo el
+ * puntero. Ambos comparten el grupo de colisión 2.
+ * @returns {{ body: CANNON.Body, point: THREE.Vector3 } | null}
  */
 function pickTarget() {
   raycaster.setFromCamera(pointerNDC, state.camera);
@@ -54,7 +55,7 @@ function pickTarget() {
   let hitPoint = null;
   let hitBody = null;
 
-  // 1) Raycast físico limitado al ragdoll (ignora suelo/paredes/puntero).
+  // 1) Raycast físico limitado a objetos arrastrables (ignora suelo/paredes).
   const origin = raycaster.ray.origin;
   const dir = raycaster.ray.direction;
   const rayFrom = new CANNON.Vec3(origin.x, origin.y, origin.z);
@@ -79,7 +80,7 @@ function pickTarget() {
     );
   }
 
-  // 2) Fallback: intersección contra el mesh visible.
+  // 2) Fallback: intersección contra el mesh visible de Miku.
   if (!hitPoint && state.model) {
     const intersections = raycaster.intersectObject(state.model, true);
     if (intersections.length > 0) {
@@ -89,33 +90,30 @@ function pickTarget() {
 
   if (!hitPoint) return null;
 
-  // 3) Resolver la entrada del ragdoll asociada.
-  let entry = null;
+  // 3) El raycast físico ya devuelve el cuerpo golpeado (hueso o esfera).
   if (hitBody) {
-    state.boneBodies.forEach((e) => {
-      if (e.body === hitBody) entry = e;
-    });
+    return { body: hitBody, point: hitPoint };
   }
-  if (!entry) {
-    // Sin body directo: elegir el más cercano al punto de impacto.
-    let nearestDist = Infinity;
-    state.boneBodies.forEach((e) => {
-      const bodyPos = new THREE.Vector3(e.body.position.x, e.body.position.y, e.body.position.z);
-      const dist = bodyPos.distanceTo(hitPoint);
-      if (dist < nearestDist) {
-        nearestDist = dist;
-        entry = e;
-      }
-    });
-  }
-  if (!entry) return null;
 
-  return { entry, point: hitPoint };
+  // Sin body directo (solo golpeó el mesh): elegir el hueso más cercano.
+  let nearestBody = null;
+  let nearestDist = Infinity;
+  state.boneBodies.forEach((e) => {
+    const bodyPos = new THREE.Vector3(e.body.position.x, e.body.position.y, e.body.position.z);
+    const dist = bodyPos.distanceTo(hitPoint);
+    if (dist < nearestDist) {
+      nearestDist = dist;
+      nearestBody = e.body;
+    }
+  });
+  if (!nearestBody) return null;
+
+  return { body: nearestBody, point: hitPoint };
 }
 
 function onPointerDown(event) {
   if (activePointerId !== null) return;
-  if (!state.camera || !state.physicsWorld || state.boneBodies.size === 0) return;
+  if (!state.camera || !state.physicsWorld) return;
 
   updatePointerNDC(event);
   const picked = pickTarget();
@@ -131,16 +129,16 @@ function onPointerDown(event) {
     }
   }
 
-  const { entry, point } = picked;
+  const { body, point } = picked;
   state.dragDistance = state.camera.position.distanceTo(point);
-  state.draggedBone = entry;
+  state.draggedBody = body;
 
   const pointerBody = createPointerBody(point);
   state.mouseBody = pointerBody;
 
-  const pivot = worldToLocalPivot(point, entry.body);
+  const pivot = worldToLocalPivot(point, body);
   const constraint = new CANNON.PointToPointConstraint(
-    entry.body,
+    body,
     new CANNON.Vec3(pivot.x, pivot.y, pivot.z),
     pointerBody,
     new CANNON.Vec3(0, 0, 0)
@@ -149,7 +147,7 @@ function onPointerDown(event) {
   state.physicsWorld.addConstraint(constraint);
   state.mouseConstraint = constraint;
 
-  entry.body.wakeUp();
+  body.wakeUp();
 
   // Desactivar OrbitControls mientras se arrastra (evita rotar la cámara).
   if (state.controls) {
@@ -170,8 +168,8 @@ function onPointerMove(event) {
 
   state.mouseBody.position.set(hit.x, hit.y, hit.z);
   state.mouseBody.wakeUp();
-  if (state.draggedBone) {
-    state.draggedBone.body.wakeUp();
+  if (state.draggedBody) {
+    state.draggedBody.wakeUp();
   }
 }
 
@@ -199,7 +197,7 @@ function onPointerUp(event) {
   }
   state.dragPlane = null;
   state.dragDistance = null;
-  state.draggedBone = null;
+  state.draggedBody = null;
 
   if (state.controls) {
     state.controls.enabled = true;
