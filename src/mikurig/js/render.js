@@ -7,18 +7,6 @@ import { initPhysicsWorld, createRigidBody, updatePhysics } from './physics.js';
 import { buildRagdoll, resetRagdoll, syncPhysicsToBones } from './ragdoll.js';
 import { initMouseInteraction } from './interaction.js';
 
-/**
- * Dimensiones interiores de la "caja" (diorama) que encierra a Miku.
- * La caja está centrada en X, apoyada en el suelo (y = 0) y se extiende hacia
- * el fondo en -Z. La cuarta pared (frente, hacia la cámara) queda abierta en z = 0.
- */
-const BOX = {
-  width: 4.0,
-  height: 3.2,
-  depth: 3.6,
-  thickness: 0.15,
-};
-
 export async function InitializeRender() {
   initPhysicsWorld();
 
@@ -29,8 +17,6 @@ export async function InitializeRender() {
   scene.fog = new THREE.Fog(0x111116, 10, 60);
 
   // ─── Cámara ───
-  // Vista fija tipo "cuarta pared": la cámara mira de frente hacia el interior
-  // de la caja. Su posición se calcula en fitCameraToBox().
   const camera = new THREE.PerspectiveCamera(
     60,
     window.innerWidth / window.innerHeight,
@@ -38,6 +24,8 @@ export async function InitializeRender() {
     1000
   );
   state.camera = camera;
+  camera.position.set(0, 1.6, 4.5);
+  camera.lookAt(0, 1, 0);
 
   // ─── Renderer ───
   const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -53,16 +41,14 @@ export async function InitializeRender() {
   initMouseInteraction(renderer.domElement);
 
   // ─── Controles ───
-  // La vista es fija ("cuarta pared"): deshabilitamos rotación, zoom y paneo
-  // para que la caja quede pegada al viewport. Mantenemos el objeto de
-  // controles porque la interacción con el mouse lo referencia.
   const controls = new OrbitControls(camera, renderer.domElement);
   state.controls = controls;
-  controls.enableRotate = false;
-  controls.enableZoom = false;
-  controls.enablePan = false;
-  controls.enableDamping = false;
-  controls.target.set(0, BOX.height / 2, -BOX.depth / 2);
+  controls.target.set(0, 1, 0);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.minDistance = 0.5;
+  controls.maxDistance = 20;
+  controls.maxPolarAngle = Math.PI / 2 - 0.05; // evitar pasar bajo el suelo
   controls.update();
 
   // ─── Luces ───
@@ -91,10 +77,10 @@ export async function InitializeRender() {
   // ─── Ragdoll ───
   buildRagdoll();
 
-  // Construir la caja (diorama) y fijar la cámara en la "cuarta pared" para
-  // que la caja quede pegada al viewport desde el primer frame.
-  createBoxRoom(scene);
-  fitCameraToBox(camera, controls);
+  // Ajustar cámara y entorno al tamaño real del modelo para asegurar
+  // que sea visible desde el primer frame.
+  fitCameraToModel(camera, controls, state.model);
+  createEnvironment(scene, state.model);
 
   // Levantar el body inicial para que el modelo caiga desde el aire.
   state.boneBodies.forEach(({ body }) => {
@@ -162,12 +148,10 @@ function loadModel(scene) {
         model.scale.set(scale, scale, scale);
         model.updateMatrixWorld(true);
 
-        // Colocar el modelo de pie sobre el suelo (pies en y=0) y centrado
-        // dentro de la caja: en el eje X en el centro y en profundidad a la
-        // mitad de la caja para que quede encerrado por las paredes.
+        // Colocar el modelo de pie sobre el suelo (pies en y=0).
         const scaledBox = new THREE.Box3().setFromObject(model);
         const minY = scaledBox.min.y;
-        model.position.set(0, -minY, -BOX.depth / 2);
+        model.position.y = -minY;
         model.updateMatrixWorld(true);
 
         // Ajustar materiales para sombras
@@ -198,124 +182,118 @@ function loadModel(scene) {
   });
 }
 
-/**
- * Fija la cámara en la "cuarta pared": mira de frente hacia el interior de la
- * caja a lo largo de -Z. La distancia se calcula para que la boca de la caja
- * (la abertura frontal en z = 0) cubra todo el viewport, de modo que las
- * paredes interiores queden enmarcando los bordes de la pantalla.
- */
-function fitCameraToBox(camera, controls) {
-  const aspect = window.innerWidth / window.innerHeight;
+/** Ajusta cámara y controles para que el modelo sea visible completamente. */
+function fitCameraToModel(camera, controls, model) {
+  if (!model) return;
+
+  const box = new THREE.Box3().setFromObject(model);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  const center = new THREE.Vector3();
+  box.getCenter(center);
+
+  const maxDim = Math.max(size.x, size.y, size.z);
   const fov = camera.fov * (Math.PI / 180);
-  const tan = Math.tan(fov / 2);
+  const distance = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 1.4;
 
-  // Distancia a la que la abertura llena exactamente el viewport en cada eje.
-  const distForHeight = (BOX.height / 2) / tan;
-  const distForWidth = (BOX.width / 2) / (tan * aspect);
-
-  // Usamos la menor (modo "cover") con un pequeño margen para que la abertura
-  // siempre cubra el viewport y no se vea el fondo alrededor de la caja.
-  const distance = Math.min(distForHeight, distForWidth) * 0.98;
-
-  const centerX = 0;
-  const centerY = BOX.height / 2;
-  camera.position.set(centerX, centerY, distance);
-  camera.lookAt(centerX, centerY, -BOX.depth / 2);
+  camera.position.set(center.x, center.y + maxDim * 0.35, center.z + distance);
+  camera.lookAt(center);
   camera.updateProjectionMatrix();
 
   if (controls) {
-    controls.target.set(centerX, centerY, -BOX.depth / 2);
+    controls.target.copy(center);
     controls.update();
   }
 }
 
 /**
- * Construye la caja (diorama) que encierra a Miku: cinco caras visibles
- * (fondo, suelo, techo, izquierda y derecha) y una cuarta pared frontal abierta
- * hacia la cámara. Cada cara tiene además un cuerpo físico estático para
- * contener el ragdoll, incluyendo una pared frontal invisible.
+ * Crea la "caja" que contiene a Miku: suelo, techo y cuatro paredes.
+ * La pared frontal (hacia la cámara) es la "cuarta pared": existe físicamente
+ * para contener el ragdoll, pero es invisible para que el usuario mire dentro.
  */
-function createBoxRoom(scene) {
-  const { width: W, height: H, depth: D, thickness: T } = BOX;
-  const cz = -D / 2; // centro de la caja en profundidad
+function createEnvironment(scene, model) {
+  // Dimensionar la caja de forma ajustada al modelo para que Miku realmente
+  // choque contra las paredes en lugar de flotar en un espacio enorme.
+  let modelHeight = 1.7;
+  let modelWidth = 0.6;
+  if (model) {
+    const box = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    modelHeight = size.y || modelHeight;
+    modelWidth = Math.max(size.x, size.z) || modelWidth;
+  }
 
-  // Materiales interiores (tonos oscuros acordes al tema).
-  const wallMat = new THREE.MeshStandardMaterial({
-    color: 0x262634,
-    roughness: 0.9,
-    metalness: 0.05,
-    side: THREE.DoubleSide,
-  });
-  const backMat = new THREE.MeshStandardMaterial({
-    color: 0x2c2946,
-    roughness: 0.85,
-    metalness: 0.05,
-    side: THREE.DoubleSide,
-  });
+  // Interior de la caja (ancho/profundo cuadrado + alto).
+  const W = Math.max(2.4, modelWidth * 3.2);
+  const H = Math.max(2.6, modelHeight * 1.7);
+  const half = W / 2;
+  const t = 0.2; // grosor de pared
+
+  // ─── Suelo visible ───
+  const floorGeo = new THREE.PlaneGeometry(W, W);
   const floorMat = new THREE.MeshStandardMaterial({
-    color: 0x1c1c24,
-    roughness: 0.8,
+    color: 0x22222a,
+    roughness: 0.85,
     metalness: 0.1,
     side: THREE.DoubleSide,
   });
-
-  // ─── Caras visibles ───
-  // Fondo (z = -D), mirando hacia +Z.
-  const back = new THREE.Mesh(new THREE.PlaneGeometry(W, H), backMat);
-  back.position.set(0, H / 2, -D);
-  back.receiveShadow = true;
-  scene.add(back);
-
-  // Suelo (y = 0).
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), floorMat);
+  const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.rotation.x = -Math.PI / 2;
-  floor.position.set(0, 0, cz);
   floor.receiveShadow = true;
   scene.add(floor);
 
-  // Techo (y = H).
-  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(W, D), wallMat);
-  ceiling.rotation.x = Math.PI / 2;
-  ceiling.position.set(0, H, cz);
-  ceiling.receiveShadow = true;
-  scene.add(ceiling);
+  // Suelo físico: plano infinito a y = 0 (coincide con el suelo visible).
+  const groundShape = new CANNON.Plane();
+  const groundBody = createRigidBody(new THREE.Vector3(0, 0, 0), groundShape, 0);
+  groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+  state.staticBodies.push(groundBody);
 
-  // Pared izquierda (x = -W/2), mirando hacia +X.
-  const left = new THREE.Mesh(new THREE.PlaneGeometry(D, H), wallMat);
-  left.rotation.y = Math.PI / 2;
-  left.position.set(-W / 2, H / 2, cz);
-  left.receiveShadow = true;
-  scene.add(left);
+  // Materiales de paredes: paneles semitransparentes visibles vs. invisibles.
+  const panelMat = new THREE.MeshStandardMaterial({
+    color: 0x2a2a38,
+    roughness: 0.9,
+    metalness: 0.05,
+    transparent: true,
+    opacity: 0.35,
+    side: THREE.DoubleSide,
+  });
+  const invisibleMat = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: 0,
+    depthWrite: false,
+  });
 
-  // Pared derecha (x = W/2), mirando hacia -X.
-  const right = new THREE.Mesh(new THREE.PlaneGeometry(D, H), wallMat);
-  right.rotation.y = -Math.PI / 2;
-  right.position.set(W / 2, H / 2, cz);
-  right.receiveShadow = true;
-  scene.add(right);
-
-  // ─── Cuerpos físicos estáticos (cajas finas) ───
-  // Cada pared se desplaza hacia afuera media unidad de grosor para que la
-  // superficie interior coincida con la cara visible.
-  const staticWalls = [
-    // suelo: superficie superior en y = 0
-    { pos: [0, -T / 2, cz], half: [W / 2, T / 2, D / 2] },
-    // techo: superficie inferior en y = H
-    { pos: [0, H + T / 2, cz], half: [W / 2, T / 2, D / 2] },
-    // fondo: superficie frontal en z = -D
-    { pos: [0, H / 2, -D - T / 2], half: [W / 2, H / 2, T / 2] },
-    // izquierda: superficie interior en x = -W/2
-    { pos: [-W / 2 - T / 2, H / 2, cz], half: [T / 2, H / 2, D / 2] },
-    // derecha: superficie interior en x = W/2
-    { pos: [W / 2 + T / 2, H / 2, cz], half: [T / 2, H / 2, D / 2] },
-    // cuarta pared (frontal, invisible): mantiene a Miku dentro de la caja
-    { pos: [0, H / 2, T / 2], half: [W / 2, H / 2, T / 2] },
+  // La cámara mira hacia -z desde +z, así que el frente abierto es +z.
+  const walls = [
+    { pos: [0, H / 2, -half], size: [W, H, t], mat: panelMat },       // fondo
+    { pos: [-half, H / 2, 0], size: [t, H, W], mat: panelMat },       // izquierda
+    { pos: [half, H / 2, 0], size: [t, H, W], mat: panelMat },        // derecha
+    { pos: [0, H / 2, half], size: [W, H, t], mat: invisibleMat },    // cuarta pared (abierta)
+    { pos: [0, H, 0], size: [W, t, W], mat: invisibleMat },           // techo
   ];
-  staticWalls.forEach(({ pos, half }) => {
-    const shape = new CANNON.Box(new CANNON.Vec3(half[0], half[1], half[2]));
+  walls.forEach(({ pos, size, mat }) => {
+    const geo = new THREE.BoxGeometry(size[0], size[1], size[2]);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.set(...pos);
+    mesh.receiveShadow = true;
+    scene.add(mesh);
+
+    const halfExtents = new CANNON.Vec3(size[0] / 2, size[1] / 2, size[2] / 2);
+    const shape = new CANNON.Box(halfExtents);
     const body = createRigidBody(new THREE.Vector3(pos[0], pos[1], pos[2]), shape, 0);
     state.staticBodies.push(body);
   });
+
+  // Contorno tipo wireframe para que la caja se lea claramente.
+  const cageGeo = new THREE.BoxGeometry(W, H, W);
+  const edges = new THREE.EdgesGeometry(cageGeo);
+  const cage = new THREE.LineSegments(
+    edges,
+    new THREE.LineBasicMaterial({ color: 0x5f3fff, transparent: true, opacity: 0.5 })
+  );
+  cage.position.set(0, H / 2, 0);
+  scene.add(cage);
 }
 
 /** Redimensiona renderer y cámara al cambiar el tamaño de ventana. */
@@ -325,9 +303,6 @@ function onWindowResize() {
   state.renderer.setSize(width, height);
   state.camera.aspect = width / height;
   state.camera.updateProjectionMatrix();
-  // Recalcular la posición de la cámara para que la caja siga cubriendo el
-  // viewport tras el cambio de proporción.
-  fitCameraToBox(state.camera, state.controls);
 }
 
 /** Expuesto para el botón de reset en la UI. */
